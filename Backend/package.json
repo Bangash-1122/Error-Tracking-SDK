@@ -1,0 +1,29 @@
+{
+  "name": "error-tracker-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Commercial Error Monitoring SaaS - Backend & Monorepo Baseline",
+  "packageManager": "pnpm@12.15.0",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @error-tracker/api --filter @error-tracker/worker --filter @error-tracker/web dev",
+    "dev:api": "pnpm --filter @error-tracker/api dev",
+    "dev:worker": "pnpm --filter @error-tracker/worker dev",
+    "dev:web": "pnpm --filter @error-tracker/web dev",
+    "build": "pnpm --recursive build",
+    "db:migrate": "pnpm --filter @error-tracker/database migrate",
+    "db:seed": "pnpm --filter @error-tracker/database seed",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "pnpm --recursive lint"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
