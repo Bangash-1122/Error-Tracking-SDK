@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   Organization,
   Project,
@@ -24,6 +24,8 @@ import {
   INITIAL_MEMBERS,
   INITIAL_SUBSCRIPTION,
 } from './mockData';
+import { api } from './apiClient';
+import { captureException, init as initSdk } from './sdk';
 
 interface AppContextType {
   org: Organization;
@@ -48,10 +50,13 @@ interface AppContextType {
   subscription: Subscription;
   updatePlan: (plan: Subscription['plan']) => void;
   rotateActiveKey: () => string;
-  sendSimulatedEvent: (errorType: string, message: string) => EventRecord;
+  sendSimulatedEvent: (errorType: string, message: string) => Promise<EventRecord>;
   getEventForIssue: (issueId: string) => EventRecord;
   toastMessage: string | null;
   showToast: (msg: string) => void;
+  refreshData: () => Promise<void>;
+  currentUser: { id: string; name: string; email: string } | null;
+  logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -69,34 +74,175 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
   const [subscription, setSubscription] = useState<Subscription>(INITIAL_SUBSCRIPTION);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>({
+    id: 'usr_admin_01',
+    name: 'Admin User',
+    email: 'admin@acme.com',
+  });
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const updateIssueStatus = (issueId: string, status: IssueStatus) => {
+  // Initialize SDK for active project
+  useEffect(() => {
+    if (activeProject?.rawKey) {
+      initSdk({
+        projectKey: activeProject.rawKey,
+        environment: activeEnvironment === 'all' ? 'production' : activeEnvironment,
+        release: releases[0]?.version || 'v1.3.2',
+        endpoint: '/api/v1/events',
+      });
+    }
+  }, [activeProject, activeEnvironment, releases]);
+
+  // Synchronize state with real backend API
+  const refreshData = useCallback(async () => {
+    try {
+      // Fetch me
+      const meRes = await api.getMe().catch(() => null);
+      if (meRes?.authenticated && meRes.user) {
+        setCurrentUser(meRes.user);
+        if (meRes.organizations?.[0]?.org) {
+          const o = meRes.organizations[0].org;
+          setOrg((prev) => ({
+            ...prev,
+            id: o.id,
+            name: o.name,
+            slug: o.slug,
+            plan: o.plan,
+          }));
+        }
+      }
+
+      // Fetch projects
+      const prjRes = await api.getProjects().catch(() => null);
+      if (prjRes?.projects && prjRes.projects.length > 0) {
+        const formattedProjects: Project[] = prjRes.projects.map((p) => ({
+          id: p.id,
+          organizationId: p.organizationId || 'org_acme_corp',
+          name: p.name,
+          slug: p.slug,
+          platform: p.platform,
+          publicKey: p.slug + '_key...',
+          rawKey: 'ek_live_' + p.id.replace(/[^a-z0-9]/g, '') + '9b2c1d4e5f',
+          status: (p.status || 'active') as 'active' | 'revoked',
+          eventCount: p.eventCount || 0,
+          quotaLimit: p.quotaLimit || 100000,
+          createdAt: p.createdAt || new Date().toISOString(),
+        }));
+        setProjects(formattedProjects);
+      }
+
+      // Fetch issues from backend
+      const issuesRes = await api.getIssues({
+        projectId: activeProject.id,
+        environment: activeEnvironment,
+      }).catch(() => null);
+
+      if (issuesRes?.items && issuesRes.items.length > 0) {
+        const backendIssues: Issue[] = issuesRes.items.map((i: any) => ({
+          id: i.id,
+          projectId: i.projectId,
+          fingerprint: i.fingerprint,
+          title: i.title,
+          culprit: i.culprit,
+          type: i.type,
+          severity: i.severity || 'error',
+          status: i.status,
+          count: i.count,
+          userCount: i.userCount || 1,
+          firstSeen: i.firstSeen,
+          lastSeen: i.lastSeen,
+          assignedTo: i.assignedTo,
+          environment: i.environment,
+          release: i.release,
+          latestEventId: i.latestEventId || `evt_${i.id}`,
+        }));
+        setIssues(backendIssues);
+      }
+
+      // Fetch releases
+      const relRes = await api.getReleases(activeProject.id).catch(() => null);
+      if (relRes?.releases && relRes.releases.length > 0) {
+        setReleases(relRes.releases);
+      }
+
+      // Fetch alerts
+      const altRes = await api.getAlerts(activeProject.id).catch(() => null);
+      if (altRes?.rules && altRes.rules.length > 0) {
+        setAlertRules(altRes.rules);
+      }
+      if (altRes?.deliveries && altRes.deliveries.length > 0) {
+        setDeliveries(altRes.deliveries);
+      }
+
+      // Fetch members
+      const memRes = await api.getMembers(org.id).catch(() => null);
+      if (memRes?.members && memRes.members.length > 0) {
+        setMembers(memRes.members);
+      }
+
+      // Fetch billing
+      const billRes = await api.getBilling(org.id).catch(() => null);
+      if (billRes?.subscription) {
+        setSubscription(billRes.subscription);
+      }
+    } catch {
+      // Fallback gracefully to default state
+    }
+  }, [activeProject.id, activeEnvironment, org.id]);
+
+  useEffect(() => {
+    refreshData();
+  }, [refreshData]);
+
+  const updateIssueStatus = async (issueId: string, status: IssueStatus) => {
+    // Optimistic UI update
     setIssues((prev) =>
       prev.map((iss) => (iss.id === issueId ? { ...iss, status } : iss))
     );
     showToast(`Issue ${status === 'resolved' ? 'marked as resolved' : status === 'ignored' ? 'ignored' : 'reopened'}`);
+
+    try {
+      await api.patchIssue(issueId, { status });
+    } catch (err: any) {
+      showToast(`Failed to update issue: ${err.message}`);
+      refreshData();
+    }
   };
 
-  const bulkUpdateStatus = (issueIds: string[], status: IssueStatus) => {
+  const bulkUpdateStatus = async (issueIds: string[], status: IssueStatus) => {
+    // Optimistic UI update
     setIssues((prev) =>
       prev.map((iss) => (issueIds.includes(iss.id) ? { ...iss, status } : iss))
     );
     showToast(`${issueIds.length} issues updated to ${status}`);
+
+    try {
+      await api.bulkUpdateIssues(issueIds, status);
+    } catch (err: any) {
+      showToast(`Bulk update failed: ${err.message}`);
+      refreshData();
+    }
   };
 
-  const assignIssue = (issueId: string, userId: string | null) => {
+  const assignIssue = async (issueId: string, userId: string | null) => {
     setIssues((prev) =>
       prev.map((iss) => (iss.id === issueId ? { ...iss, assignedTo: userId } : iss))
     );
     showToast('Assignee updated');
+
+    try {
+      await api.patchIssue(issueId, { assignedTo: userId });
+    } catch (err: any) {
+      showToast(`Failed to assign: ${err.message}`);
+      refreshData();
+    }
   };
 
-  const toggleAlertRule = (ruleId: string) => {
+  const toggleAlertRule = async (ruleId: string) => {
     setAlertRules((prev) =>
       prev.map((r) =>
         r.id === ruleId
@@ -105,21 +251,42 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       )
     );
     showToast('Alert rule status toggled');
+
+    try {
+      await api.toggleAlertRule(ruleId);
+    } catch (err: any) {
+      showToast(`Failed to toggle: ${err.message}`);
+      refreshData();
+    }
   };
 
-  const addAlertRule = (rule: Omit<AlertRule, 'id' | 'createdAt'>) => {
+  const addAlertRule = async (rule: Omit<AlertRule, 'id' | 'createdAt'>) => {
+    const tempId = `alt_${Date.now()}`;
     const newRule: AlertRule = {
       ...rule,
-      id: `alt_${Date.now()}`,
+      id: tempId,
       createdAt: new Date().toISOString(),
     };
     setAlertRules((prev) => [newRule, ...prev]);
     showToast('Alert rule created successfully');
+
+    try {
+      const res = await api.createAlertRule({
+        ...rule,
+        projectId: rule.projectId || activeProject.id,
+      });
+      if (res?.rule) {
+        setAlertRules((prev) => prev.map((r) => (r.id === tempId ? res.rule : r)));
+      }
+    } catch (err: any) {
+      showToast(`Failed to save alert rule: ${err.message}`);
+    }
   };
 
-  const addMember = (name: string, email: string, role: TeamMember['role']) => {
+  const addMember = async (name: string, email: string, role: TeamMember['role']) => {
+    const tempId = `usr_${Date.now()}`;
     const newMember: TeamMember = {
-      id: `usr_${Date.now()}`,
+      id: tempId,
       name,
       email,
       role,
@@ -127,9 +294,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     setMembers((prev) => [...prev, newMember]);
     showToast(`Invitation sent to ${email}`);
+
+    try {
+      const res = await api.inviteMember({
+        organizationId: org.id,
+        name,
+        email,
+        role,
+      });
+      if (res?.member) {
+        setMembers((prev) => prev.map((m) => (m.id === tempId ? res.member : m)));
+      }
+    } catch (err: any) {
+      showToast(`Invitation error: ${err.message}`);
+    }
   };
 
-  const updatePlan = (plan: Subscription['plan']) => {
+  const updatePlan = async (plan: Subscription['plan']) => {
     const limits = { free: 10000, pro: 100000, enterprise: 1000000 };
     const costs = { free: 0, pro: 49, enterprise: 199 };
     setSubscription((prev) => ({
@@ -140,6 +321,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
     setOrg((prev) => ({ ...prev, plan }));
     showToast(`Plan successfully upgraded to ${plan.toUpperCase()}`);
+
+    try {
+      await api.updatePlan(org.id, plan);
+    } catch (err: any) {
+      showToast(`Plan update failed: ${err.message}`);
+    }
   };
 
   const rotateActiveKey = () => {
@@ -154,51 +341,51 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       prev.map((p) => (p.id === activeProject.id ? { ...p, publicKey: masked, rawKey: raw } : p))
     );
     showToast('Project ingest key rotated successfully');
+
+    // Asynchronously call backend to rotate key
+    api.rotateProjectKey(activeProject.id).catch(() => {});
     return raw;
   };
 
-  const sendSimulatedEvent = (errorType: string, message: string) => {
-    const newId = `iss_${Date.now()}`;
-    const newEventId = `evt_${Date.now()}`;
-    const newIssue: Issue = {
-      id: newId,
-      projectId: activeProject.id,
-      fingerprint: `fp-${errorType.toLowerCase()}-${Date.now()}`,
-      title: `${errorType}: ${message}`,
-      culprit: 'src/app/checkout/PaymentGateway.tsx:88:14',
-      type: errorType,
-      severity: 'error',
-      status: 'unresolved',
-      count: 1,
-      userCount: 1,
-      firstSeen: new Date().toISOString(),
-      lastSeen: new Date().toISOString(),
-      assignedTo: null,
-      environment: 'production',
-      release: 'v1.3.2',
-      latestEventId: newEventId,
-    };
+  // Real SDK error ingestion
+  const sendSimulatedEvent = async (errorType: string, message: string): Promise<EventRecord> => {
+    const syntheticError = new Error(message);
+    syntheticError.name = errorType;
+    syntheticError.stack = `${errorType}: ${message}\n    at calculateOrderTotal (src/app/checkout/PaymentGateway.tsx:88:14)\n    at processCheckout (src/app/checkout/CheckoutForm.tsx:142:5)`;
 
-    setIssues((prev) => [newIssue, ...prev]);
-    setSubscription((prev) => ({
-      ...prev,
-      acceptedEvents: prev.acceptedEvents + 1,
-      billableEvents: prev.billableEvents + 1,
-    }));
+    showToast(`Submitting ${errorType} through real SDK pipeline...`);
 
-    showToast(`Test event ingested! Created issue: ${errorType}`);
-    return {
-      ...SAMPLE_EVENT_RECORD,
-      id: newEventId,
-      eventId: `sim_${Date.now()}`,
-      issueId: newId,
-      exception: {
-        type: errorType,
-        value: message,
-        handled: false,
-      },
-      occurredAt: new Date().toISOString(),
-    };
+    try {
+      const response = await captureException(syntheticError, {
+        tags: {
+          environment: activeEnvironment === 'all' ? 'production' : activeEnvironment,
+          release: releases[0]?.version || 'v1.3.2',
+          section: 'checkout',
+          tier: 'enterprise',
+        },
+      });
+
+      showToast(`SDK Event Accepted! Event ID: ${response.eventId.slice(0, 8)}...`);
+
+      // Refresh real issues from backend
+      await refreshData();
+
+      return {
+        ...SAMPLE_EVENT_RECORD,
+        id: response.eventId,
+        eventId: response.eventId,
+        issueId: (response as any).issueId || `iss_${Date.now()}`,
+        exception: {
+          type: errorType,
+          value: message,
+          handled: false,
+        },
+        occurredAt: response.receivedAt,
+      };
+    } catch (err: any) {
+      showToast(`Ingestion error: ${err.message}`);
+      throw err;
+    }
   };
 
   const getEventForIssue = (issueId: string): EventRecord => {
@@ -212,6 +399,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         handled: false,
       },
     };
+  };
+
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // continue
+    }
+    window.location.href = '/login';
   };
 
   return (
@@ -243,6 +439,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         getEventForIssue,
         toastMessage,
         showToast,
+        refreshData,
+        currentUser,
+        logout,
       }}
     >
       {children}

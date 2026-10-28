@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShieldAlert, ArrowRight, Lock, Mail, Building, User } from 'lucide-react';
+import { ShieldAlert, ArrowRight, Lock, Mail, Building, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { api } from '@/lib/apiClient';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -11,10 +12,32 @@ export default function SignupPage() {
   const [orgName, setOrgName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSignUp = (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push('/onboarding');
+    setLoading(true);
+    setErrorMessage(null);
+
+    try {
+      const res = await api.signup({
+        name,
+        orgName,
+        email,
+        password,
+      });
+
+      if (res.success) {
+        router.push('/onboarding');
+      } else {
+        setErrorMessage(res.error || 'Registration failed');
+      }
+    } catch (err: any) {
+      setErrorMessage(err.message || 'An error occurred during registration. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -35,6 +58,13 @@ export default function SignupPage() {
           Set up your organization and start monitoring exceptions in minutes.
         </p>
 
+        {errorMessage && (
+          <div className="mt-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-800 animate-in fade-in duration-150">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+            <div className="flex-1 font-medium leading-relaxed">{errorMessage}</div>
+          </div>
+        )}
+
         <form onSubmit={handleSignUp} className="space-y-4 mt-6">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
@@ -45,6 +75,7 @@ export default function SignupPage() {
               <input
                 type="text"
                 required
+                disabled={loading}
                 placeholder="Sarah Jenkins"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -62,6 +93,7 @@ export default function SignupPage() {
               <input
                 type="text"
                 required
+                disabled={loading}
                 placeholder="Acme International"
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
@@ -79,6 +111,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 required
+                disabled={loading}
                 placeholder="sarah@acme.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -96,6 +129,7 @@ export default function SignupPage() {
               <input
                 type="password"
                 required
+                disabled={loading}
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -106,10 +140,20 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-lg shadow-[#2563EB]/30 transition-all hover:scale-[1.01] cursor-pointer mt-2"
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold text-xs shadow-lg shadow-[#2563EB]/30 transition-all hover:scale-[1.01] cursor-pointer mt-2 disabled:opacity-50"
           >
-            <span>Continue to Project Onboarding</span>
-            <ArrowRight className="w-4 h-4" />
+            {loading ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span>Creating Account...</span>
+              </>
+            ) : (
+              <>
+                <span>Continue to Project Onboarding</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </form>
 

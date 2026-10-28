@@ -98,16 +98,24 @@ error_tracker.init(
     setTimeout(() => setCopiedSnippet(false), 2000);
   };
 
-  const handleSendTest = () => {
+  const [ingestError, setIngestError] = useState<string | null>(null);
+
+  const handleSendTest = async () => {
     setIsSending(true);
-    setTimeout(() => {
-      sendSimulatedEvent(
+    setIngestError(null);
+    setEventSent(false);
+
+    try {
+      await sendSimulatedEvent(
         'SDKTestException',
         'Verification event generated from SDK Integration Setup Panel'
       );
-      setIsSending(false);
       setEventSent(true);
-    }, 800);
+    } catch (err: any) {
+      setIngestError(err.message || 'SDK test ingestion failed.');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -239,6 +247,16 @@ error_tracker.init(
             <p className="text-emerald-700 mt-0.5">
               The event was received by the worker pipeline and recorded in your issues list.
             </p>
+          </div>
+        </div>
+      )}
+
+      {ingestError && (
+        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-center gap-3 text-xs text-rose-800 animate-in fade-in duration-200">
+          <div className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+          <div>
+            <p className="font-bold">Ingestion Pipeline Rejection</p>
+            <p className="text-rose-700 mt-0.5">{ingestError}</p>
           </div>
         </div>
       )}

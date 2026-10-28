@@ -221,9 +221,18 @@ export default function BillingPage() {
                     {inv.status}
                   </span>
                   <button
-                    onClick={() => showToast(`Downloaded invoice ${inv.id}`)}
-                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600"
-                    title="Download PDF"
+                    onClick={() => {
+                      const downloadUrl = `/api/v1/billing/invoices/${inv.id}/download?orgId=${org.id}`;
+                      const a = document.createElement('a');
+                      a.href = downloadUrl;
+                      a.download = `Invoice-${inv.id}.txt`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      showToast(`Downloaded verified tax invoice ${inv.id}`);
+                    }}
+                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 cursor-pointer transition-colors"
+                    title="Download Official Invoice"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>

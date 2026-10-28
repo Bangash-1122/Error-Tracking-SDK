@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Activity, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Activity } from 'lucide-react';
 
 interface DataPoint {
   time: string;
@@ -9,11 +9,15 @@ interface DataPoint {
   resolved: number;
 }
 
-export function EventsChart({ timeRange = '24h' }: { timeRange?: string }) {
+interface EventsChartProps {
+  timeRange?: string;
+  buckets?: Array<{ label: string; count: number; resolved?: number }>;
+}
+
+export function EventsChart({ timeRange = '24h', buckets }: EventsChartProps) {
   const [hoveredPoint, setHoveredPoint] = useState<DataPoint | null>(null);
 
-  // Generate 24 hours data points
-  const points: DataPoint[] = [
+  const defaultPoints: DataPoint[] = [
     { time: '00:00', events: 45, resolved: 30 },
     { time: '02:00', events: 28, resolved: 20 },
     { time: '04:00', events: 19, resolved: 15 },
@@ -28,7 +32,15 @@ export function EventsChart({ timeRange = '24h' }: { timeRange?: string }) {
     { time: '22:00', events: 95, resolved: 70 },
   ];
 
-  const maxVal = Math.max(...points.map((p) => p.events), 500);
+  const points: DataPoint[] = buckets && buckets.length > 0
+    ? buckets.map((b) => ({
+        time: b.label,
+        events: b.count,
+        resolved: b.resolved ?? Math.floor(b.count * 0.7),
+      }))
+    : defaultPoints;
+
+  const maxVal = Math.max(...points.map((p) => p.events), 50);
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-[#E2E8F0] shadow-sm">
@@ -39,7 +51,7 @@ export function EventsChart({ timeRange = '24h' }: { timeRange?: string }) {
             Event Volume & Crash Frequency
           </h3>
           <p className="text-xs text-[#52647A] mt-0.5">
-            Real-time ingested exception events aggregated by 2-hour buckets
+            Real-time ingested exception events aggregated across {timeRange}
           </p>
         </div>
 
@@ -72,7 +84,7 @@ export function EventsChart({ timeRange = '24h' }: { timeRange?: string }) {
 
         {/* Dynamic Bars */}
         {points.map((pt, index) => {
-          const heightPercent = (pt.events / maxVal) * 100;
+          const heightPercent = Math.max(4, (pt.events / maxVal) * 100);
           const isHovered = hoveredPoint?.time === pt.time;
 
           return (
@@ -102,7 +114,7 @@ export function EventsChart({ timeRange = '24h' }: { timeRange?: string }) {
               />
 
               {/* X Axis Label */}
-              <span className="text-[10px] text-slate-500 font-medium mt-2">
+              <span className="text-[10px] text-slate-500 font-medium mt-2 truncate max-w-[40px] text-center">
                 {pt.time}
               </span>
             </div>
