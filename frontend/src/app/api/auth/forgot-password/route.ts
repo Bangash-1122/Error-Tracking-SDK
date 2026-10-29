@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
       resetUrl,
       token,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error processing request' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error processing request';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

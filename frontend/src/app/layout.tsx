@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import { AppProvider } from '@/lib/store';
 
 export const metadata: Metadata = {
@@ -17,11 +18,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col bg-[#F5F8FC] text-[#0F172A]">
-        <AppProvider>
-          <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#10203C] text-white">Loading ErrorPulse...</div>}>
-            {children}
-          </Suspense>
-        </AppProvider>
+        <QueryProvider>
+          <AppProvider>
+            <Suspense fallback={<div className="h-screen w-screen flex items-center justify-center bg-[#10203C] text-white">Loading ErrorPulse...</div>}>
+              {children}
+            </Suspense>
+          </AppProvider>
+        </QueryProvider>
       </body>
     </html>
   );

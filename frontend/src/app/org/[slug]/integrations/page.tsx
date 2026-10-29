@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { api } from '@/lib/apiClient';
+import type { Integration } from '@/types';
 import {
   Workflow,
   CheckCircle2,
@@ -18,9 +19,9 @@ import {
 
 export default function IntegrationsPage() {
   const { org, activeProject, showToast } = useApp();
-  const [integrations, setIntegrations] = useState<any[]>([]);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [testingId, setTestingId] = useState<string | null>(null);
-  const [editModal, setEditModal] = useState<any | null>(null);
+  const [editModal, setEditModal] = useState<Integration | null>(null);
   const [editConfig, setEditConfig] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function IntegrationsPage() {
     };
   }, [org.id]);
 
-  const handleTestConnection = async (item: any) => {
+  const handleTestConnection = async (item: Integration) => {
     setTestingId(item.id);
     const dest = item.config?.webhookUrl || item.config?.url;
     if (!dest) {
@@ -51,14 +52,15 @@ export default function IntegrationsPage() {
       } else {
         showToast(`Connection test failed: ${res.message}`);
       }
-    } catch (err: any) {
-      showToast(`Connection error: ${err.message}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown connection error';
+      showToast(`Connection error: ${message}`);
     } finally {
       setTestingId(null);
     }
   };
 
-  const handleToggle = async (item: any) => {
+  const handleToggle = async (item: Integration) => {
     const newStatus = item.status === 'connected' ? 'disconnected' : 'connected';
     setIntegrations((prev) =>
       prev.map((i) => (i.id === item.id ? { ...i, status: newStatus } : i))
@@ -93,32 +95,38 @@ export default function IntegrationsPage() {
 
         {/* Integrations Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(integrations.length > 0 ? integrations : [
+          {(integrations.length > 0 ? integrations : ([
             {
               id: 'int_slack',
-              type: 'slack',
+              organizationId: org.id,
+              type: 'slack' as const,
               name: 'Slack Notifications',
-              status: 'connected',
+              status: 'connected' as const,
               config: { channel: '#engineering-alerts', webhookUrl: 'https://hooks.slack.com/services/T00/B00/X00' },
               description: 'Broadcast instant exception alerts and regression spikes into team Slack channels.',
+              createdAt: '2026-01-01T00:00:00.000Z',
             },
             {
               id: 'int_github',
-              type: 'github',
+              organizationId: org.id,
+              type: 'github' as const,
               name: 'GitHub Issue Sync',
-              status: 'connected',
+              status: 'connected' as const,
               config: { repo: 'acme-corp/storefront-web', autoCreateIssues: 'true' },
               description: 'Automatically file tracked issues and regressions directly into your GitHub repository.',
+              createdAt: '2026-01-01T00:00:00.000Z',
             },
             {
               id: 'int_webhook',
-              type: 'webhook',
+              organizationId: org.id,
+              type: 'webhook' as const,
               name: 'Generic Ingress Webhooks',
-              status: 'connected',
+              status: 'connected' as const,
               config: { url: 'https://api.acme.com/webhooks/ops-pager' },
               description: 'Deliver signed JSON envelopes to custom endpoints, PagerDuty, or Discord bots.',
+              createdAt: '2026-01-01T00:00:00.000Z',
             },
-          ]).map((item) => {
+          ] as Integration[])).map((item) => {
             const isConnected = item.status === 'connected';
             return (
               <div

@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
   try {
     const url = req.nextUrl;
     const projectId = url.searchParams.get('projectId') || undefined;
-    const status = (url.searchParams.get('status') as any) || 'all';
+    const rawStatus = url.searchParams.get('status');
+    const status = (rawStatus === 'unresolved' || rawStatus === 'resolved' || rawStatus === 'ignored') ? rawStatus : 'all';
     const environment = url.searchParams.get('environment') || 'all';
     const query = url.searchParams.get('query') || url.searchParams.get('q') || undefined;
     const limit = parseInt(url.searchParams.get('limit') || '50', 10);
@@ -29,8 +30,9 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(result);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching issues' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching issues';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -67,7 +69,8 @@ export async function PATCH(req: NextRequest) {
       updatedCount: updated.length,
       issues: updated,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Bulk update failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Bulk update failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

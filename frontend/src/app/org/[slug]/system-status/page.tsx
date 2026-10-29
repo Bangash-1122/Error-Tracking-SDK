@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
 import { AppShell } from '@/components/layout/AppShell';
-import { api } from '@/lib/apiClient';
+import { api, type SystemStatusResponse } from '@/lib/apiClient';
 import {
   Activity,
   CheckCircle2,
@@ -15,64 +14,62 @@ import {
   ShieldAlert,
   Cpu,
   Clock,
-  ExternalLink,
   Wifi,
 } from 'lucide-react';
 
-interface ServiceStatus {
-  name: string;
-  status: 'operational' | 'degraded' | 'outage';
-  latency: string;
-  uptime: string;
-}
-
-interface Incident {
-  id: string;
-  title: string;
-  date: string;
-  impact: string;
-  status: string;
-  duration: string;
-}
-
 export default function SystemStatusPage() {
-  const params = useParams();
-  const slug = (params?.slug as string) || 'acme-corp';
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [data, setData] = useState<{
-    overallStatus: string;
-    timestamp: string;
-    services: ServiceStatus[];
-    incidents: Incident[];
-    diagnostics?: {
-      nodeVersion: string;
-      heapUsedMb: number;
-      uptimeSeconds: number;
-    };
-  } | null>(null);
+  const [data, setData] = useState<SystemStatusResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStatus = async (isManual = false) => {
-    if (isManual) setRefreshing(true);
-    else setLoading(true);
+  const fetchStatus = async () => {
+    setRefreshing(true);
     try {
       const res = await api.getSystemStatus();
       setData(res);
       setError(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch live health metrics');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to fetch live health metrics';
+      setError(msg);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(() => fetchStatus(false), 30000);
-    return () => clearInterval(interval);
+    let mounted = true;
+    api.getSystemStatus()
+      .then((res) => {
+        if (mounted) {
+          setData(res);
+          setError(null);
+          setLoading(false);
+        }
+      })
+      .catch((err: unknown) => {
+        if (mounted) {
+          const msg = err instanceof Error ? err.message : 'Failed to fetch live health metrics';
+          setError(msg);
+          setLoading(false);
+        }
+      });
+
+    const interval = setInterval(() => {
+      api.getSystemStatus()
+        .then((res) => {
+          if (mounted) {
+            setData(res);
+            setError(null);
+          }
+        })
+        .catch(() => {});
+    }, 30000);
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const formatUptime = (seconds?: number) => {
@@ -124,7 +121,7 @@ export default function SystemStatusPage() {
               Auto-refreshes every 30s
             </span>
             <button
-              onClick={() => fetchStatus(true)}
+              onClick={() => fetchStatus()}
               disabled={refreshing}
               className="inline-flex items-center gap-2 px-3.5 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition shadow-sm disabled:opacity-50"
             >

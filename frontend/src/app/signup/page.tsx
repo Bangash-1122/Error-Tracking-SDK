@@ -33,8 +33,9 @@ export default function SignupPage() {
       } else {
         setErrorMessage(res.error || 'Registration failed');
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'An error occurred during registration. Please try again.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'An error occurred during registration. Please try again.';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }

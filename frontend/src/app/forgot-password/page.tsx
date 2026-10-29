@@ -23,8 +23,9 @@ export default function ForgotPasswordPage() {
         message: res.message || 'Password reset link generated successfully.',
         resetUrl: res.resetUrl,
       });
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Unable to process reset request. Please check your email.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unable to process reset request. Please check your email.';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }

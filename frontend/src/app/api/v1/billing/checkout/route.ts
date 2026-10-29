@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
       checkoutUrl,
       message: `Checkout session initialized for ${plan.toUpperCase()} tier`,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Checkout initiation failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Checkout initiation failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

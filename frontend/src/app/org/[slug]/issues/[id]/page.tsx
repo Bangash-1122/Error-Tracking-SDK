@@ -195,7 +195,7 @@ function IssueDetailContent() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'overview' | 'events' | 'releases' | 'activity')}
               className={`pb-3 px-3 text-xs font-bold transition-all relative ${
                 activeTab === tab.id
                   ? 'text-[#2563EB] border-b-2 border-[#2563EB]'

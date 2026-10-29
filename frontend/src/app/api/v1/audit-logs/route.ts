@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
     const logs = db.listAuditLogs(orgId, { actorId, action, limit });
 
     return NextResponse.json({ logs });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching audit logs' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching audit logs';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

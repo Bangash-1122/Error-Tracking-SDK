@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import crypto from 'node:crypto';
 import { getServerDb } from '@/lib/server/db';
+import { getServerCache } from '@/lib/server/cache';
 
 const StackFrameSchema = z.object({
   filename: z.string().min(1, 'Filename is required'),
@@ -60,13 +62,13 @@ const IngestEventPayloadSchema = z.object({
 // Sensitive data sanitization regexes
 const SENSITIVE_KEY_REGEX = /pass(word)?|secret|token|api[_-]?key|auth|bearer|credit[_-]?card/i;
 
-function sanitizeRecord(obj: Record<string, any>): Record<string, any> {
-  const result: Record<string, any> = {};
+function sanitizeRecord(obj: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(obj)) {
     if (SENSITIVE_KEY_REGEX.test(k)) {
       result[k] = '[REDACTED]';
     } else if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
-      result[k] = sanitizeRecord(v);
+      result[k] = sanitizeRecord(v as Record<string, unknown>);
     } else {
       result[k] = v;
     }
@@ -77,9 +79,11 @@ function sanitizeRecord(obj: Record<string, any>): Record<string, any> {
 export async function POST(req: NextRequest) {
   try {
     const rawKey = req.headers.get('x-project-key') || req.nextUrl.searchParams.get('key');
-    const body = await req.json();
+    const body: unknown = await req.json();
 
-    const effectiveKey = rawKey || body.projectKey;
+    const bodyObj = (typeof body === 'object' && body !== null) ? (body as Record<string, unknown>) : {};
+    const effectiveKey = rawKey || (typeof bodyObj.projectKey === 'string' ? bodyObj.projectKey : undefined);
+
     if (!effectiveKey) {
       return NextResponse.json(
         { error: 'Missing Project Ingestion Key in X-Project-Key header or payload.' },
@@ -112,7 +116,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate payload with Zod
-    const payloadWithKey = { ...body, projectKey: effectiveKey };
+    const payloadWithKey = { ...bodyObj, projectKey: effectiveKey };
     const parsed = IngestEventPayloadSchema.safeParse(payloadWithKey);
     if (!parsed.success) {
       return NextResponse.json(
@@ -132,7 +136,7 @@ export async function POST(req: NextRequest) {
     const culprit = topFrame ? `${topFrame.filename}:${topFrame.lineno || 0}:${topFrame.colno || 0}` : 'unknown';
 
     // Sanitize context
-    const sanitizedContext = sanitizeRecord(data.context);
+    const sanitizedContext = sanitizeRecord(data.context as Record<string, unknown>);
 
     // Ingest transaction
     const result = await db.recordIngestEventTransactional({
@@ -150,12 +154,16 @@ export async function POST(req: NextRequest) {
       release: data.release,
       environment: data.environment,
       frames: data.frames,
-      breadcrumbs: sanitizedContext.breadcrumbs || [],
-      tags: sanitizedContext.tags || {},
-      user: sanitizedContext.user,
-      request: sanitizedContext.request,
+      breadcrumbs: Array.isArray(sanitizedContext.breadcrumbs) ? sanitizedContext.breadcrumbs : [],
+      tags: (sanitizedContext.tags as Record<string, string>) || {},
+      user: (sanitizedContext.user && typeof sanitizedContext.user === 'object') ? (sanitizedContext.user as { id?: string; username?: string; email?: string; ip_address?: string }) : undefined,
+      request: (sanitizedContext.request && typeof sanitizedContext.request === 'object') ? (sanitizedContext.request as { url?: string; method?: string; headers?: Record<string, string> }) : undefined,
       occurredAt: data.occurredAt,
     });
+
+    // Invalidate project stats cache so realtime counters update
+    const cache = getServerCache();
+    cache.invalidateProject(project.id);
 
     return NextResponse.json(
       {
@@ -169,9 +177,10 @@ export async function POST(req: NextRequest) {
       },
       { status: 200 }
     );
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Internal error processing ingestion event';
     return NextResponse.json(
-      { error: err.message || 'Internal error processing ingestion event' },
+      { error: msg },
       { status: 500 }
     );
   }

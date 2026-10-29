@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useCallback } from 'react';
 import {
   Organization,
   Project,
@@ -12,6 +12,7 @@ import {
   TeamMember,
   Subscription,
   IssueStatus,
+  User,
 } from '../types';
 import {
   INITIAL_ORG,
@@ -26,8 +27,44 @@ import {
 } from './mockData';
 import { api } from './apiClient';
 import { captureException, init as initSdk } from './sdk';
+import {
+  useUiStore,
+  useProjectStore,
+  useAuthStore,
+  useSidebarCollapsed,
+  useMobileDrawerOpen,
+  useActiveTimeRange,
+  useActiveEnvironment,
+  useToastMessage,
+  useShowToast,
+  useActiveProject,
+  useSetActiveProject,
+  useCurrentUser,
+  useCurrentOrg,
+} from './stores';
+import {
+  useProjectsQuery,
+  useIssuesQuery,
+  useReleasesQuery,
+  useAlertsQuery,
+  useMembersQuery,
+  useBillingQuery,
+  useUpdateIssueMutation,
+  useBulkUpdateIssuesMutation,
+  useToggleAlertRuleMutation,
+  useCreateAlertRuleMutation,
+  useInviteMemberMutation,
+  useUpdatePlanMutation,
+  useRotateKeyMutation,
+  useAuthQuery,
+} from './queries';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from './queries/keys';
 
-interface AppContextType {
+// Re-export modular Zustand stores and selectors for direct, re-render-optimized consumption
+export * from './stores';
+
+export interface AppContextType {
   org: Organization;
   projects: Project[];
   activeProject: Project;
@@ -37,53 +74,145 @@ interface AppContextType {
   setActiveTimeRange: (range: string) => void;
   activeEnvironment: string;
   setActiveEnvironment: (env: string) => void;
-  updateIssueStatus: (issueId: string, status: IssueStatus) => void;
-  bulkUpdateStatus: (issueIds: string[], status: IssueStatus) => void;
-  assignIssue: (issueId: string, userId: string | null) => void;
+  updateIssueStatus: (issueId: string, status: IssueStatus) => Promise<void>;
+  bulkUpdateStatus: (issueIds: string[], status: IssueStatus) => Promise<void>;
+  assignIssue: (issueId: string, userId: string | null) => Promise<void>;
   releases: Release[];
   alertRules: AlertRule[];
   deliveries: AlertDelivery[];
-  toggleAlertRule: (ruleId: string) => void;
-  addAlertRule: (rule: Omit<AlertRule, 'id' | 'createdAt'>) => void;
+  toggleAlertRule: (ruleId: string) => Promise<void>;
+  addAlertRule: (rule: Omit<AlertRule, 'id' | 'createdAt'>) => Promise<void>;
   members: TeamMember[];
-  addMember: (name: string, email: string, role: TeamMember['role']) => void;
+  addMember: (name: string, email: string, role: TeamMember['role']) => Promise<void>;
   subscription: Subscription;
-  updatePlan: (plan: Subscription['plan']) => void;
+  updatePlan: (plan: Subscription['plan']) => Promise<void>;
   rotateActiveKey: () => string;
   sendSimulatedEvent: (errorType: string, message: string) => Promise<EventRecord>;
   getEventForIssue: (issueId: string) => EventRecord;
   toastMessage: string | null;
   showToast: (msg: string) => void;
   refreshData: () => Promise<void>;
-  currentUser: { id: string; name: string; email: string } | null;
+  currentUser: User | null;
   logout: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [org, setOrg] = useState<Organization>(INITIAL_ORG);
-  const [projects, setProjects] = useState<Project[]>(INITIAL_PROJECTS);
-  const [activeProject, setActiveProject] = useState<Project>(INITIAL_PROJECTS[0]);
-  const [issues, setIssues] = useState<Issue[]>(INITIAL_ISSUES);
-  const [activeTimeRange, setActiveTimeRange] = useState<string>('24h');
-  const [activeEnvironment, setActiveEnvironment] = useState<string>('all');
-  const [releases, setReleases] = useState<Release[]>(INITIAL_RELEASES);
-  const [alertRules, setAlertRules] = useState<AlertRule[]>(INITIAL_ALERT_RULES);
-  const [deliveries, setDeliveries] = useState<AlertDelivery[]>(INITIAL_DELIVERIES);
-  const [members, setMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
-  const [subscription, setSubscription] = useState<Subscription>(INITIAL_SUBSCRIPTION);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; email: string } | null>({
-    id: 'usr_admin_01',
-    name: 'Admin User',
-    email: 'admin@acme.com',
-  });
+  const queryClient = useQueryClient();
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
+  // Zustand Stores
+  const {
+    activeTimeRange,
+    setActiveTimeRange,
+    activeEnvironment,
+    setActiveEnvironment,
+    toastMessage,
+    showToast,
+  } = useUiStore();
+
+  const { activeProject, setActiveProject } = useProjectStore();
+  const { currentUser, setCurrentUser, currentOrg, setCurrentOrg } = useAuthStore();
+
+  // TanStack Query: Server State Queries
+  const { data: authData } = useAuthQuery();
+  const { data: projectsData } = useProjectsQuery(currentOrg.id);
+  const { data: issuesData } = useIssuesQuery({
+    projectId: activeProject?.id,
+    environment: activeEnvironment,
+  });
+  const { data: releasesData } = useReleasesQuery(activeProject?.id);
+  const { data: alertsData } = useAlertsQuery(activeProject?.id);
+  const { data: membersData } = useMembersQuery(currentOrg.id);
+  const { data: billingData } = useBillingQuery(currentOrg.id);
+
+  // TanStack Query: Mutations
+  const updateIssueMutation = useUpdateIssueMutation();
+  const bulkUpdateMutation = useBulkUpdateIssuesMutation();
+  const toggleAlertMutation = useToggleAlertRuleMutation();
+  const createAlertMutation = useCreateAlertRuleMutation();
+  const inviteMemberMutation = useInviteMemberMutation();
+  const updatePlanMutation = useUpdatePlanMutation();
+  const rotateKeyMutation = useRotateKeyMutation();
+
+  // Sync authenticated user into Zustand auth store
+  useEffect(() => {
+    if (authData?.authenticated && authData.user) {
+      setCurrentUser(authData.user);
+      if (authData.organizations?.[0]?.org) {
+        const o = authData.organizations[0].org;
+        setCurrentOrg({
+          id: o.id,
+          name: o.name,
+          slug: o.slug,
+          plan: o.plan,
+          createdAt: o.createdAt || INITIAL_ORG.createdAt,
+        });
+      }
+    }
+  }, [authData, setCurrentUser, setCurrentOrg]);
+
+  // Sync projects from server
+  const projects = useMemo(() => {
+    if (projectsData?.projects && projectsData.projects.length > 0) {
+      return projectsData.projects;
+    }
+    return INITIAL_PROJECTS;
+  }, [projectsData]);
+
+  // Update active project if needed
+  useEffect(() => {
+    if (projects.length > 0 && !projects.some((p) => p.id === activeProject?.id)) {
+      setActiveProject(projects[0]);
+    }
+  }, [projects, activeProject, setActiveProject]);
+
+  // Sync issues from server
+  const issues = useMemo(() => {
+    if (issuesData?.items && issuesData.items.length > 0) {
+      return issuesData.items;
+    }
+    return INITIAL_ISSUES;
+  }, [issuesData]);
+
+  // Sync releases from server
+  const releases = useMemo(() => {
+    if (releasesData?.releases && releasesData.releases.length > 0) {
+      return releasesData.releases;
+    }
+    return INITIAL_RELEASES;
+  }, [releasesData]);
+
+  // Sync alert rules & deliveries from server
+  const alertRules = useMemo(() => {
+    if (alertsData?.rules && alertsData.rules.length > 0) {
+      return alertsData.rules;
+    }
+    return INITIAL_ALERT_RULES;
+  }, [alertsData]);
+
+  const deliveries = useMemo(() => {
+    if (alertsData?.deliveries && alertsData.deliveries.length > 0) {
+      return alertsData.deliveries;
+    }
+    return INITIAL_DELIVERIES;
+  }, [alertsData]);
+
+  // Sync members from server
+  const members = useMemo(() => {
+    if (membersData?.members && membersData.members.length > 0) {
+      return membersData.members;
+    }
+    return INITIAL_MEMBERS;
+  }, [membersData]);
+
+  // Sync subscription from server
+  const subscription = useMemo(() => {
+    if (billingData?.subscription) {
+      return billingData.subscription;
+    }
+    return INITIAL_SUBSCRIPTION;
+  }, [billingData]);
 
   // Initialize SDK for active project
   useEffect(() => {
@@ -97,253 +226,108 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [activeProject, activeEnvironment, releases]);
 
-  // Synchronize state with real backend API
+  // Manually refresh all active queries
   const refreshData = useCallback(async () => {
-    try {
-      // Fetch me
-      const meRes = await api.getMe().catch(() => null);
-      if (meRes?.authenticated && meRes.user) {
-        setCurrentUser(meRes.user);
-        if (meRes.organizations?.[0]?.org) {
-          const o = meRes.organizations[0].org;
-          setOrg((prev) => ({
-            ...prev,
-            id: o.id,
-            name: o.name,
-            slug: o.slug,
-            plan: o.plan,
-          }));
-        }
-      }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.issues.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.releases.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.alerts.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.orgs.all }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
+    ]);
+  }, [queryClient]);
 
-      // Fetch projects
-      const prjRes = await api.getProjects().catch(() => null);
-      if (prjRes?.projects && prjRes.projects.length > 0) {
-        const formattedProjects: Project[] = prjRes.projects.map((p) => ({
-          id: p.id,
-          organizationId: p.organizationId || 'org_acme_corp',
-          name: p.name,
-          slug: p.slug,
-          platform: p.platform,
-          publicKey: p.slug + '_key...',
-          rawKey: 'ek_live_' + p.id.replace(/[^a-z0-9]/g, '') + '9b2c1d4e5f',
-          status: (p.status || 'active') as 'active' | 'revoked',
-          eventCount: p.eventCount || 0,
-          quotaLimit: p.quotaLimit || 100000,
-          createdAt: p.createdAt || new Date().toISOString(),
-        }));
-        setProjects(formattedProjects);
-      }
-
-      // Fetch issues from backend
-      const issuesRes = await api.getIssues({
-        projectId: activeProject.id,
-        environment: activeEnvironment,
-      }).catch(() => null);
-
-      if (issuesRes?.items && issuesRes.items.length > 0) {
-        const backendIssues: Issue[] = issuesRes.items.map((i: any) => ({
-          id: i.id,
-          projectId: i.projectId,
-          fingerprint: i.fingerprint,
-          title: i.title,
-          culprit: i.culprit,
-          type: i.type,
-          severity: i.severity || 'error',
-          status: i.status,
-          count: i.count,
-          userCount: i.userCount || 1,
-          firstSeen: i.firstSeen,
-          lastSeen: i.lastSeen,
-          assignedTo: i.assignedTo,
-          environment: i.environment,
-          release: i.release,
-          latestEventId: i.latestEventId || `evt_${i.id}`,
-        }));
-        setIssues(backendIssues);
-      }
-
-      // Fetch releases
-      const relRes = await api.getReleases(activeProject.id).catch(() => null);
-      if (relRes?.releases && relRes.releases.length > 0) {
-        setReleases(relRes.releases);
-      }
-
-      // Fetch alerts
-      const altRes = await api.getAlerts(activeProject.id).catch(() => null);
-      if (altRes?.rules && altRes.rules.length > 0) {
-        setAlertRules(altRes.rules);
-      }
-      if (altRes?.deliveries && altRes.deliveries.length > 0) {
-        setDeliveries(altRes.deliveries);
-      }
-
-      // Fetch members
-      const memRes = await api.getMembers(org.id).catch(() => null);
-      if (memRes?.members && memRes.members.length > 0) {
-        setMembers(memRes.members);
-      }
-
-      // Fetch billing
-      const billRes = await api.getBilling(org.id).catch(() => null);
-      if (billRes?.subscription) {
-        setSubscription(billRes.subscription);
-      }
-    } catch {
-      // Fallback gracefully to default state
-    }
-  }, [activeProject.id, activeEnvironment, org.id]);
-
-  useEffect(() => {
-    refreshData();
-  }, [refreshData]);
-
+  // Actions
   const updateIssueStatus = async (issueId: string, status: IssueStatus) => {
-    // Optimistic UI update
-    setIssues((prev) =>
-      prev.map((iss) => (iss.id === issueId ? { ...iss, status } : iss))
-    );
     showToast(`Issue ${status === 'resolved' ? 'marked as resolved' : status === 'ignored' ? 'ignored' : 'reopened'}`);
-
     try {
-      await api.patchIssue(issueId, { status });
-    } catch (err: any) {
-      showToast(`Failed to update issue: ${err.message}`);
-      refreshData();
+      await updateIssueMutation.mutateAsync({ issueId, patch: { status } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Failed to update issue: ${msg}`);
     }
   };
 
   const bulkUpdateStatus = async (issueIds: string[], status: IssueStatus) => {
-    // Optimistic UI update
-    setIssues((prev) =>
-      prev.map((iss) => (issueIds.includes(iss.id) ? { ...iss, status } : iss))
-    );
     showToast(`${issueIds.length} issues updated to ${status}`);
-
     try {
-      await api.bulkUpdateIssues(issueIds, status);
-    } catch (err: any) {
-      showToast(`Bulk update failed: ${err.message}`);
-      refreshData();
+      await bulkUpdateMutation.mutateAsync({ issueIds, status });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Bulk update failed: ${msg}`);
     }
   };
 
   const assignIssue = async (issueId: string, userId: string | null) => {
-    setIssues((prev) =>
-      prev.map((iss) => (iss.id === issueId ? { ...iss, assignedTo: userId } : iss))
-    );
     showToast('Assignee updated');
-
     try {
-      await api.patchIssue(issueId, { assignedTo: userId });
-    } catch (err: any) {
-      showToast(`Failed to assign: ${err.message}`);
-      refreshData();
+      await updateIssueMutation.mutateAsync({ issueId, patch: { assignedTo: userId } });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Failed to assign: ${msg}`);
     }
   };
 
   const toggleAlertRule = async (ruleId: string) => {
-    setAlertRules((prev) =>
-      prev.map((r) =>
-        r.id === ruleId
-          ? { ...r, status: r.status === 'active' ? 'paused' : 'active' }
-          : r
-      )
-    );
     showToast('Alert rule status toggled');
-
     try {
-      await api.toggleAlertRule(ruleId);
-    } catch (err: any) {
-      showToast(`Failed to toggle: ${err.message}`);
-      refreshData();
+      await toggleAlertMutation.mutateAsync(ruleId);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Failed to toggle: ${msg}`);
     }
   };
 
   const addAlertRule = async (rule: Omit<AlertRule, 'id' | 'createdAt'>) => {
-    const tempId = `alt_${Date.now()}`;
-    const newRule: AlertRule = {
-      ...rule,
-      id: tempId,
-      createdAt: new Date().toISOString(),
-    };
-    setAlertRules((prev) => [newRule, ...prev]);
     showToast('Alert rule created successfully');
-
     try {
-      const res = await api.createAlertRule({
+      await createAlertMutation.mutateAsync({
         ...rule,
         projectId: rule.projectId || activeProject.id,
       });
-      if (res?.rule) {
-        setAlertRules((prev) => prev.map((r) => (r.id === tempId ? res.rule : r)));
-      }
-    } catch (err: any) {
-      showToast(`Failed to save alert rule: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Failed to save alert rule: ${msg}`);
     }
   };
 
   const addMember = async (name: string, email: string, role: TeamMember['role']) => {
-    const tempId = `usr_${Date.now()}`;
-    const newMember: TeamMember = {
-      id: tempId,
-      name,
-      email,
-      role,
-      joinedAt: new Date().toISOString(),
-    };
-    setMembers((prev) => [...prev, newMember]);
     showToast(`Invitation sent to ${email}`);
-
     try {
-      const res = await api.inviteMember({
-        organizationId: org.id,
+      await inviteMemberMutation.mutateAsync({
+        organizationId: currentOrg.id,
         name,
         email,
         role,
       });
-      if (res?.member) {
-        setMembers((prev) => prev.map((m) => (m.id === tempId ? res.member : m)));
-      }
-    } catch (err: any) {
-      showToast(`Invitation error: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Invitation error: ${msg}`);
     }
   };
 
   const updatePlan = async (plan: Subscription['plan']) => {
-    const limits = { free: 10000, pro: 100000, enterprise: 1000000 };
-    const costs = { free: 0, pro: 49, enterprise: 199 };
-    setSubscription((prev) => ({
-      ...prev,
-      plan,
-      eventLimit: limits[plan],
-      costMonthly: costs[plan],
-    }));
-    setOrg((prev) => ({ ...prev, plan }));
     showToast(`Plan successfully upgraded to ${plan.toUpperCase()}`);
-
     try {
-      await api.updatePlan(org.id, plan);
-    } catch (err: any) {
-      showToast(`Plan update failed: ${err.message}`);
+      await updatePlanMutation.mutateAsync({ organizationId: currentOrg.id, plan });
+      setCurrentOrg({ ...currentOrg, plan });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Plan update failed: ${msg}`);
     }
   };
 
   const rotateActiveKey = () => {
     const raw = `ek_live_${Math.random().toString(16).slice(2)}${Math.random().toString(16).slice(2)}`;
     const masked = raw.slice(0, 16) + '...';
-    setActiveProject((prev) => ({
-      ...prev,
+    setActiveProject({
+      ...activeProject,
       publicKey: masked,
       rawKey: raw,
-    }));
-    setProjects((prev) =>
-      prev.map((p) => (p.id === activeProject.id ? { ...p, publicKey: masked, rawKey: raw } : p))
-    );
+    });
     showToast('Project ingest key rotated successfully');
-
-    // Asynchronously call backend to rotate key
-    api.rotateProjectKey(activeProject.id).catch(() => {});
+    rotateKeyMutation.mutate(activeProject.id);
     return raw;
   };
 
@@ -367,14 +351,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       showToast(`SDK Event Accepted! Event ID: ${response.eventId.slice(0, 8)}...`);
 
-      // Refresh real issues from backend
-      await refreshData();
+      // Invalidate issues and analytics cache so fresh telemetry shows up immediately
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.issues.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.analytics.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.projects.all }),
+      ]);
 
       return {
         ...SAMPLE_EVENT_RECORD,
         id: response.eventId,
         eventId: response.eventId,
-        issueId: (response as any).issueId || `iss_${Date.now()}`,
+        issueId: `iss_${Date.now()}`,
         exception: {
           type: errorType,
           value: message,
@@ -382,8 +370,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         },
         occurredAt: response.receivedAt,
       };
-    } catch (err: any) {
-      showToast(`Ingestion error: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Ingestion error: ${msg}`);
       throw err;
     }
   };
@@ -413,7 +402,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   return (
     <AppContext.Provider
       value={{
-        org,
+        org: currentOrg,
         projects,
         activeProject,
         setActiveProject,
@@ -455,7 +444,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useApp() {
+export function useApp(): AppContextType {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useApp must be used within an AppProvider');

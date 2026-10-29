@@ -26,7 +26,8 @@ export async function GET(
         'Content-Disposition': `attachment; filename="Invoice-${id}.txt"`,
       },
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error generating invoice' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error generating invoice';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

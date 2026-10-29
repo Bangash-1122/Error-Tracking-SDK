@@ -24,8 +24,9 @@ export default function LoginPage() {
       } else {
         setErrorMessage(res.error || 'Authentication failed');
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Invalid email or password. Please verify your credentials.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Invalid email or password. Please verify your credentials.';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }

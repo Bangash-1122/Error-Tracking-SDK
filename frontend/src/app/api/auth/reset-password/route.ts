@@ -38,7 +38,8 @@ export async function POST(req: NextRequest) {
       success: true,
       message: 'Your password has been successfully reset. You may now sign in.',
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Failed to reset password' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Failed to reset password';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

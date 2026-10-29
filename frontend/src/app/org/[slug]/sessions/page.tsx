@@ -5,6 +5,7 @@ import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { MetricsCard } from '@/components/dashboard/MetricsCard';
 import { api } from '@/lib/apiClient';
+import type { UserSession, AffectedUser } from '@/types';
 import {
   Users,
   Activity,
@@ -19,7 +20,7 @@ import {
 
 export default function SessionsPage() {
   const { org, activeProject } = useApp();
-  const [sessionsData, setSessionsData] = useState<{ sessions: any[]; affectedUsers: any[] }>({
+  const [sessionsData, setSessionsData] = useState<{ sessions: UserSession[]; affectedUsers: AffectedUser[] }>({
     sessions: [],
     affectedUsers: [],
   });

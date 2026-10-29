@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useApp } from '@/lib/store';
+import { useUiStore } from '@/lib/stores';
 import {
   LayoutDashboard,
   AlertTriangle,
@@ -53,22 +54,26 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     logout,
   } = useApp();
 
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
+  const collapsed = useUiStore((s) => s.sidebarCollapsed);
+  const setCollapsed = useUiStore((s) => s.setSidebarCollapsed);
+  const mobileDrawerOpen = useUiStore((s) => s.mobileDrawerOpen);
+  const setMobileDrawerOpen = useUiStore((s) => s.setMobileDrawerOpen);
+  const searchModalOpen = useUiStore((s) => s.searchModalOpen);
+  const setSearchModalOpen = useUiStore((s) => s.setSearchModalOpen);
+  const toggleSearchModal = useUiStore((s) => s.toggleSearchModal);
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
-  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // Ctrl+K / Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setSearchModalOpen((prev) => !prev);
+        toggleSearchModal();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [toggleSearchModal]);
 
   const unresolvedCount = issues.filter(
     (i) => i.projectId === activeProject.id && i.status === 'unresolved'

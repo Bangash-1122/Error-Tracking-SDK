@@ -188,7 +188,7 @@ describe('ErrorPulse Core Integration & Database Tests', () => {
     assert.ok(invoices.length > 0);
     const invoice = invoices[0];
 
-    const receipt = db.generateInvoiceContent(invoice.id, 'Acme Corp', invoice.amount, invoice.createdAt);
+    const receipt = db.generateInvoiceContent(invoice.id, 'Acme Corp', invoice.amount, invoice.createdAt || invoice.date);
     assert.ok(receipt);
     assert.ok(receipt.includes('OFFICIAL TAX INVOICE'));
     assert.ok(receipt.includes(invoice.id));

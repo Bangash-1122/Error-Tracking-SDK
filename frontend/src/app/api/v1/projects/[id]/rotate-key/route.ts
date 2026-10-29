@@ -40,7 +40,8 @@ export async function POST(
       rawKey,
       publicKey: key.publicKey,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Key rotation failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Key rotation failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

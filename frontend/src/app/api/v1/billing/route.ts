@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
       subscription,
       invoices,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching billing data' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching billing data';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
 
     const updated = await db.updateSubscriptionPlan(organizationId, plan, actor);
     return NextResponse.json({ success: true, subscription: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error updating plan' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error updating plan';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

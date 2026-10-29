@@ -10,7 +10,8 @@ export async function GET(
     const db = getServerDb();
     const events = await db.getIssueEvents(id);
     return NextResponse.json({ events });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching events' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching events';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

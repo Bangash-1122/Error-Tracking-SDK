@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -15,6 +15,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { api } from '@/lib/apiClient';
+import type { Issue, Project, Release, User } from '@/types';
 
 interface GlobalSearchModalProps {
   isOpen: boolean;
@@ -28,10 +29,10 @@ export function GlobalSearchModal({ isOpen, onClose, orgSlug }: GlobalSearchModa
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<{
-    issues: any[];
-    projects: any[];
-    releases: any[];
-    users: any[];
+    issues: Issue[];
+    projects: Project[];
+    releases: Release[];
+    users: User[];
   }>({
     issues: [],
     projects: [],
@@ -39,52 +40,52 @@ export function GlobalSearchModal({ isOpen, onClose, orgSlug }: GlobalSearchModa
     users: [],
   });
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
-
-  // Load recent searches from localStorage
-  useEffect(() => {
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
     try {
       const stored = localStorage.getItem('errorpulse_recent_searches');
-      if (stored) {
-        setRecentSearches(JSON.parse(stored).slice(0, 5));
-      }
+      return stored ? JSON.parse(stored).slice(0, 5) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveRecentSearch = useCallback((term: string) => {
+    if (!term.trim()) return;
+    try {
+      setRecentSearches((prev) => {
+        const updated = [term.trim(), ...prev.filter((s) => s !== term.trim())].slice(0, 5);
+        localStorage.setItem('errorpulse_recent_searches', JSON.stringify(updated));
+        return updated;
+      });
     } catch {
       // ignore
     }
   }, []);
 
-  const saveRecentSearch = (term: string) => {
-    if (!term.trim()) return;
-    try {
-      const updated = [term.trim(), ...recentSearches.filter((s) => s !== term.trim())].slice(0, 5);
-      setRecentSearches(updated);
-      localStorage.setItem('errorpulse_recent_searches', JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-  };
-
   // Focus input on open
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-      setSelectedIndex(0);
-    } else {
-      setQuery('');
-      setResults({ issues: [], projects: [], releases: [], users: [] });
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+        setSelectedIndex(0);
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
   // Debounced search query
   useEffect(() => {
     if (!query.trim()) {
-      setResults({ issues: [], projects: [], releases: [], users: [] });
-      setLoading(false);
-      return;
+      const timer = setTimeout(() => {
+        setResults({ issues: [], projects: [], releases: [], users: [] });
+        setLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
     }
 
-    setLoading(true);
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await api.search(query.trim());
         setResults(res);
@@ -100,18 +101,18 @@ export function GlobalSearchModal({ isOpen, onClose, orgSlug }: GlobalSearchModa
   }, [query]);
 
   // Flattened list of clickable results for keyboard navigation
-  const flatResults = [
+  const flatResults = useMemo(() => [
     ...results.issues.map((i) => ({ type: 'issue', item: i, href: `/org/${orgSlug}/issues/${i.id}` })),
     ...results.projects.map((p) => ({ type: 'project', item: p, href: `/org/${orgSlug}/projects` })),
     ...results.releases.map((r) => ({ type: 'release', item: r, href: `/org/${orgSlug}/releases` })),
     ...results.users.map((u) => ({ type: 'user', item: u, href: `/org/${orgSlug}/settings` })),
-  ];
+  ], [results, orgSlug]);
 
   const handleSelect = useCallback((item: { href: string; title?: string }) => {
     saveRecentSearch(query);
     onClose();
     router.push(item.href);
-  }, [onClose, query, router]);
+  }, [onClose, query, router, saveRecentSearch]);
 
   // Keyboard navigation
   useEffect(() => {

@@ -181,7 +181,7 @@ export default function BillingPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => updatePlan(tier.id as any)}
+                      onClick={() => updatePlan(tier.id as 'free' | 'pro' | 'enterprise')}
                       className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all ${
                         tier.popular
                           ? 'bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-md shadow-[#2563EB]/25'

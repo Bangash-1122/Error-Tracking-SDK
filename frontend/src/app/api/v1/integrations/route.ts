@@ -15,8 +15,9 @@ export async function GET(req: NextRequest) {
     const db = getServerDb();
     const integrations = db.listIntegrations(orgId);
     return NextResponse.json({ integrations });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching integrations' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching integrations';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -36,7 +37,8 @@ export async function POST(req: NextRequest) {
     const updated = db.updateIntegration(organizationId, id, config as Record<string, string>, status);
 
     return NextResponse.json({ success: true, integration: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error updating integration' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error updating integration';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -22,8 +22,9 @@ export async function GET(
 
     const latestEvent = await db.getLatestEventForIssue(id);
     return NextResponse.json({ issue, latestEvent });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching issue' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching issue';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -58,7 +59,8 @@ export async function PATCH(
     }
 
     return NextResponse.json({ success: true, issue: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error updating issue' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error updating issue';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

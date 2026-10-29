@@ -31,7 +31,8 @@ export async function GET(req: NextRequest) {
       sessions,
       affectedUsers: Array.from(userMap.values()),
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching sessions' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching sessions';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

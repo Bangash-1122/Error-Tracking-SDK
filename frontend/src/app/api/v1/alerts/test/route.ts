@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
         deliveryStatus = 'failed';
         errorMessage = `HTTP error ${response.status} from webhook endpoint`;
       }
-    } catch (fetchErr: any) {
+    } catch (fetchErr: unknown) {
       deliveryStatus = 'failed';
-      errorMessage = fetchErr.message || 'Connection refused or timed out';
+      errorMessage = fetchErr instanceof Error ? fetchErr.message : 'Connection refused or timed out';
     }
 
     const delivery = {
@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
           ? `Test payload successfully dispatched to ${destination}`
           : `Delivery failed: ${errorMessage}`,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error executing test alert' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error executing test alert';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

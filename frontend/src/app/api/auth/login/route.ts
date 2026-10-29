@@ -78,9 +78,10 @@ export async function POST(req: NextRequest) {
     }
 
     return response;
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Authentication error';
     return NextResponse.json(
-      { error: err.message || 'Authentication error' },
+      { error: message },
       { status: 500 }
     );
   }

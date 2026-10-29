@@ -34,8 +34,9 @@ function ResetPasswordContent() {
     try {
       await api.resetPassword(token, newPassword);
       setSuccess(true);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Reset failed. Token may have expired.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Reset failed. Token may have expired.';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }

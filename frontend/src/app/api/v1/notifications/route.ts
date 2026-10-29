@@ -7,8 +7,9 @@ export async function GET(req: NextRequest) {
     const db = getServerDb();
     const notifications = db.listNotifications(orgId);
     return NextResponse.json({ notifications });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching notifications' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching notifications';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -23,7 +24,8 @@ export async function PATCH(req: NextRequest) {
     const marked = db.markNotificationAsRead(organizationId, id);
 
     return NextResponse.json({ success: marked });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error updating notification' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error updating notification';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

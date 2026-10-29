@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
+import { ProjectSettings, OrganizationSettings } from '@/types';
 
 export interface UserRecord {
   id: string;
@@ -21,7 +22,7 @@ export interface MembershipRecord {
   id: string;
   organizationId: string;
   userId: string;
-  role: 'owner' | 'admin' | 'member';
+  role: 'owner' | 'admin' | 'developer' | 'viewer' | 'member';
   createdAt: string;
 }
 
@@ -183,6 +184,7 @@ export interface InvoiceRecord {
   date: string;
   status: 'Paid' | 'Pending' | 'Failed';
   pdfUrl?: string;
+  createdAt?: string;
 }
 
 export interface AuditLogRecord {
@@ -311,6 +313,8 @@ class ServerDatabase {
   private integrations = new Map<string, IntegrationRecord[]>(); // orgId -> integrations
   private notifications = new Map<string, NotificationRecord[]>(); // orgId -> notifications
   private passwordResetTokens = new Map<string, PasswordResetTokenRecord>();
+  private projectSettings = new Map<string, ProjectSettings>();
+  private organizationSettings = new Map<string, OrganizationSettings>();
 
   private initialized = false;
 
@@ -455,9 +459,9 @@ class ServerDatabase {
 
     // Seed Invoices
     this.invoices.set(orgId, [
-      { id: 'INV-2026-10', organizationId: orgId, amount: '$49.00', date: 'Oct 01, 2026', status: 'Paid' },
-      { id: 'INV-2026-09', organizationId: orgId, amount: '$49.00', date: 'Sep 01, 2026', status: 'Paid' },
-      { id: 'INV-2026-08', organizationId: orgId, amount: '$49.00', date: 'Aug 01, 2026', status: 'Paid' },
+      { id: 'INV-2026-10', organizationId: orgId, amount: '$49.00', date: 'Oct 01, 2026', status: 'Paid', createdAt: '2026-10-01T00:00:00Z' },
+      { id: 'INV-2026-09', organizationId: orgId, amount: '$49.00', date: 'Sep 01, 2026', status: 'Paid', createdAt: '2026-09-01T00:00:00Z' },
+      { id: 'INV-2026-08', organizationId: orgId, amount: '$49.00', date: 'Aug 01, 2026', status: 'Paid', createdAt: '2026-08-01T00:00:00Z' },
     ]);
 
     // Seed Releases
@@ -863,6 +867,78 @@ class ServerDatabase {
         occurredAt: '2026-01-15T08:30:00Z',
       }
     );
+
+    // Seed Project Settings
+    const defaultP1Settings: ProjectSettings = {
+      projectId: p1Id,
+      projectName: 'Storefront Web App',
+      projectDescription: 'Primary commercial e-commerce storefront web application',
+      defaultEnvironment: 'production',
+      timezone: 'UTC',
+      dateTimeFormat: 'YYYY-MM-DD HH:mm:ss',
+      projectStatus: 'active',
+      sdkReportingEnabled: true,
+      sdkVersion: '1.2.4',
+      environmentConfig: 'production',
+      releaseTrackingEnabled: true,
+      errorSamplingRate: 1.0,
+      ingestionKeyStatus: 'active',
+      installationVerified: true,
+      severityFilters: ['critical', 'error', 'warning'],
+      ignoredErrors: ['ChunkLoadError', 'ResizeObserver loop completed with undelivered notifications'],
+      errorGroupingPreference: 'fingerprint',
+      telemetryRetentionDays: 90,
+      autoResolveInactiveDays: 30,
+      regressionDetectionEnabled: true,
+      eventRateLimitPerMin: 600,
+      quotaWarningThresholdPercent: 80,
+      emailAlertsEnabled: true,
+      criticalOnlyAlerts: false,
+      newIssueAlertsEnabled: true,
+      regressionAlertsEnabled: true,
+      alertFrequency: 'instant',
+      notificationChannels: ['email', 'slack'],
+      alertThresholdCount: 10,
+      quietHoursEnabled: false,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '07:00',
+      sensitiveDataScrubbing: true,
+      scrubFields: ['password', 'secret', 'token', 'authorization', 'apiKey', 'creditCard'],
+      collectUserIpAddresses: true,
+      collectUserInfo: true,
+      sessionTrackingEnabled: true,
+      allowDataExport: true,
+      githubIntegrationEnabled: true,
+      slackIntegrationEnabled: true,
+      webhookIntegrationEnabled: true,
+      webhookEndpointUrl: 'https://api.acme.com/webhooks/ops-pager',
+      performanceMonitoringEnabled: true,
+      transactionSampleRate: 0.25,
+      slowRequestThresholdMs: 500,
+      perfAlertThresholdMs: 1500,
+      perfDataRetentionDays: 30,
+      debugDiagnosticsEnabled: true,
+      maintenanceMode: false,
+      updatedAt: new Date().toISOString(),
+    };
+    this.projectSettings.set(p1Id, defaultP1Settings);
+    this.projectSettings.set('proj_storefront', { ...defaultP1Settings, projectId: 'proj_storefront' });
+    this.projectSettings.set(p2Id, { ...defaultP1Settings, projectId: p2Id, projectName: 'Payment API Service' });
+    this.projectSettings.set('proj_payment_api', { ...defaultP1Settings, projectId: 'proj_payment_api', projectName: 'Payment API Service' });
+
+    const defaultOrgSettings: OrganizationSettings = {
+      organizationId: orgId,
+      orgName: 'Acme Corp',
+      slug: 'acme-corp',
+      billingEmail: 'billing@acme.com',
+      complianceTier: 'soc2',
+      defaultDataRetentionDays: 90,
+      enforceMfa: true,
+      ipAllowlist: ['192.168.1.0/24', '10.0.0.0/16'],
+      defaultRoleForNewMembers: 'developer',
+      updatedAt: new Date().toISOString(),
+    };
+    this.organizationSettings.set(orgId, defaultOrgSettings);
   }
 
   // ==================== AUTH & USERS ====================
@@ -981,7 +1057,7 @@ class ServerDatabase {
     return this.organizations.get(id) || null;
   }
 
-  async addMembership(organizationId: string, userId: string, role: 'owner' | 'admin' | 'member' = 'member'): Promise<MembershipRecord> {
+  async addMembership(organizationId: string, userId: string, role: 'owner' | 'admin' | 'developer' | 'viewer' | 'member' = 'member'): Promise<MembershipRecord> {
     const key = `${organizationId}:${userId}`;
     const mem: MembershipRecord = {
       id: `mem_${crypto.randomUUID().slice(0, 8)}`,
@@ -1009,6 +1085,10 @@ class ServerDatabase {
       }
     }
     return results;
+  }
+
+  async listMembers(organizationId: string): Promise<Array<MembershipRecord & { user: UserRecord }>> {
+    return this.listMembersByOrg(organizationId);
   }
 
   async listUserOrganizations(userId: string): Promise<OrganizationRecord[]> {
@@ -1849,6 +1929,211 @@ Thank you for choosing ErrorPulse for real-time exception monitoring!
       return item;
     }
     return null;
+  }
+
+  // ==================== SETTINGS & MANAGEMENT ====================
+
+  async getProjectSettings(projectId: string): Promise<ProjectSettings> {
+    const existing = this.projectSettings.get(projectId);
+    if (existing) return existing;
+
+    const project = this.projects.get(projectId);
+    const defaults: ProjectSettings = {
+      projectId,
+      projectName: project?.name || 'Project',
+      projectDescription: 'Application monitored by ErrorPulse SDK',
+      defaultEnvironment: 'production',
+      timezone: 'UTC',
+      dateTimeFormat: 'YYYY-MM-DD HH:mm:ss',
+      projectStatus: 'active',
+      sdkReportingEnabled: true,
+      sdkVersion: '1.2.4',
+      environmentConfig: 'production',
+      releaseTrackingEnabled: true,
+      errorSamplingRate: 1.0,
+      ingestionKeyStatus: 'active',
+      installationVerified: true,
+      severityFilters: ['critical', 'error', 'warning'],
+      ignoredErrors: ['ChunkLoadError'],
+      errorGroupingPreference: 'fingerprint',
+      telemetryRetentionDays: 90,
+      autoResolveInactiveDays: 30,
+      regressionDetectionEnabled: true,
+      eventRateLimitPerMin: 600,
+      quotaWarningThresholdPercent: 80,
+      emailAlertsEnabled: true,
+      criticalOnlyAlerts: false,
+      newIssueAlertsEnabled: true,
+      regressionAlertsEnabled: true,
+      alertFrequency: 'instant',
+      notificationChannels: ['email', 'slack'],
+      alertThresholdCount: 10,
+      quietHoursEnabled: false,
+      quietHoursStart: '22:00',
+      quietHoursEnd: '07:00',
+      sensitiveDataScrubbing: true,
+      scrubFields: ['password', 'secret', 'token', 'authorization'],
+      collectUserIpAddresses: true,
+      collectUserInfo: true,
+      sessionTrackingEnabled: true,
+      allowDataExport: true,
+      githubIntegrationEnabled: false,
+      slackIntegrationEnabled: false,
+      webhookIntegrationEnabled: false,
+      performanceMonitoringEnabled: true,
+      transactionSampleRate: 0.2,
+      slowRequestThresholdMs: 500,
+      perfAlertThresholdMs: 1500,
+      perfDataRetentionDays: 30,
+      debugDiagnosticsEnabled: true,
+      maintenanceMode: false,
+      updatedAt: new Date().toISOString(),
+    };
+    this.projectSettings.set(projectId, defaults);
+    return defaults;
+  }
+
+  async updateProjectSettings(
+    projectId: string,
+    patch: Partial<ProjectSettings>,
+    actor?: { id: string; name: string; email: string }
+  ): Promise<ProjectSettings> {
+    const current = await this.getProjectSettings(projectId);
+    const updated: ProjectSettings = {
+      ...current,
+      ...patch,
+      projectId,
+      updatedAt: new Date().toISOString(),
+    };
+    this.projectSettings.set(projectId, updated);
+
+    // If project name changed, sync project record
+    if (patch.projectName && patch.projectName !== current.projectName) {
+      const prj = this.projects.get(projectId);
+      if (prj) prj.name = patch.projectName;
+    }
+
+    if (actor) {
+      const project = this.projects.get(projectId);
+      this.recordAuditLog({
+        organizationId: project?.organizationId || 'org_acme_corp',
+        actor,
+        action: 'project.settings_update',
+        resource: 'project_settings',
+        targetId: projectId,
+        newValue: JSON.stringify(Object.keys(patch)),
+        result: 'success',
+      });
+    }
+
+    return updated;
+  }
+
+  async getOrganizationSettings(orgId: string): Promise<OrganizationSettings> {
+    const existing = this.organizationSettings.get(orgId);
+    if (existing) return existing;
+
+    const org = this.organizations.get(orgId);
+    const defaults: OrganizationSettings = {
+      organizationId: orgId,
+      orgName: org?.name || 'Organization',
+      slug: org?.slug || 'organization',
+      billingEmail: 'billing@acme.com',
+      complianceTier: 'standard',
+      defaultDataRetentionDays: 90,
+      enforceMfa: false,
+      ipAllowlist: [],
+      defaultRoleForNewMembers: 'developer',
+      updatedAt: new Date().toISOString(),
+    };
+    this.organizationSettings.set(orgId, defaults);
+    return defaults;
+  }
+
+  async updateOrganizationSettings(
+    orgId: string,
+    patch: Partial<OrganizationSettings>,
+    actor?: { id: string; name: string; email: string }
+  ): Promise<OrganizationSettings> {
+    const current = await this.getOrganizationSettings(orgId);
+    const updated: OrganizationSettings = {
+      ...current,
+      ...patch,
+      organizationId: orgId,
+      updatedAt: new Date().toISOString(),
+    };
+    this.organizationSettings.set(orgId, updated);
+
+    if (actor) {
+      this.recordAuditLog({
+        organizationId: orgId,
+        actor,
+        action: 'organization.settings_update',
+        resource: 'org_settings',
+        targetId: orgId,
+        newValue: JSON.stringify(Object.keys(patch)),
+        result: 'success',
+      });
+    }
+
+    return updated;
+  }
+
+  async exportProjectData(projectId: string): Promise<{ project: ProjectRecord | null; settings: ProjectSettings; exportedAt: string }> {
+    const project = this.projects.get(projectId) || null;
+    const settings = await this.getProjectSettings(projectId);
+    return {
+      project,
+      settings,
+      exportedAt: new Date().toISOString(),
+    };
+  }
+
+  async deleteProject(projectId: string, actor?: { id: string; name: string; email: string }): Promise<boolean> {
+    const prj = this.projects.get(projectId);
+    if (!prj) return false;
+
+    this.projects.delete(projectId);
+    this.projectSettings.delete(projectId);
+
+    if (actor) {
+      this.recordAuditLog({
+        organizationId: prj.organizationId,
+        actor,
+        action: 'project.delete',
+        resource: 'project',
+        targetId: projectId,
+        previousValue: prj.name,
+        result: 'success',
+      });
+    }
+    return true;
+  }
+
+  async removeMembership(organizationId: string, memberId: string, actor?: { id: string; name: string; email: string }): Promise<boolean> {
+    let foundKey: string | null = null;
+    let foundUserId: string | null = null;
+    for (const [key, mem] of this.memberships.entries()) {
+      if (mem.organizationId === organizationId && (mem.id === memberId || mem.userId === memberId)) {
+        foundKey = key;
+        foundUserId = mem.userId;
+        break;
+      }
+    }
+    if (!foundKey) return false;
+    this.memberships.delete(foundKey);
+
+    if (actor && foundUserId) {
+      this.recordAuditLog({
+        organizationId,
+        actor,
+        action: 'member.remove',
+        resource: 'membership',
+        targetId: memberId,
+        result: 'success',
+      });
+    }
+    return true;
   }
 }
 

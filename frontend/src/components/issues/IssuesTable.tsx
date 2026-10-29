@@ -9,16 +9,21 @@ import { useApp } from '@/lib/store';
 import {
   CheckCircle,
   EyeOff,
-  UserCheck,
   ChevronLeft,
   ChevronRight,
-  Filter,
-  Users,
   Flame,
-  Clock,
-  ArrowUpDown,
   Search,
 } from 'lucide-react';
+
+function formatTimeAgo(isoString: string): string {
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 interface IssuesTableProps {
   issues: Issue[];
@@ -27,7 +32,7 @@ interface IssuesTableProps {
 
 export function IssuesTable({ issues, orgSlug }: IssuesTableProps) {
   const router = useRouter();
-  const { bulkUpdateStatus, members } = useApp();
+  const { bulkUpdateStatus } = useApp();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | IssueStatus>('all');
@@ -74,16 +79,6 @@ export function IssuesTable({ issues, orgSlug }: IssuesTableProps) {
   const handleBulkIgnore = () => {
     bulkUpdateStatus(selectedIds, 'ignored');
     setSelectedIds([]);
-  };
-
-  const formatTimeAgo = (isoString: string) => {
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
   };
 
   return (

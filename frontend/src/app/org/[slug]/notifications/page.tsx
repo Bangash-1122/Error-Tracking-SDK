@@ -5,21 +5,20 @@ import Link from 'next/link';
 import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { api } from '@/lib/apiClient';
+import type { NotificationItem } from '@/types';
 import {
   Bell,
-  CheckCircle2,
   AlertTriangle,
   Flame,
   Info,
   Clock,
   ExternalLink,
   Check,
-  Filter,
 } from 'lucide-react';
 
 export default function NotificationCenterPage() {
-  const { org, activeProject, showToast } = useApp();
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { org, showToast } = useApp();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => {

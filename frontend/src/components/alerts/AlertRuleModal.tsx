@@ -97,7 +97,7 @@ export function AlertRuleModal({
             </label>
             <select
               value={conditionType}
-              onChange={(e) => setConditionType(e.target.value as any)}
+              onChange={(e) => setConditionType(e.target.value as 'new_issue' | 'frequency_spike' | 'regression')}
               className="w-full px-3.5 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#2563EB] focus:outline-none capitalize"
             >
               <option value="new_issue">When a new unique issue is first seen</option>

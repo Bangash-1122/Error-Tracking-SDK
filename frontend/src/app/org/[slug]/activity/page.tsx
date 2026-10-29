@@ -4,20 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { api } from '@/lib/apiClient';
+import type { AuditLog } from '@/types';
 import {
   History,
-  Shield,
-  Filter,
-  User,
-  Clock,
   CheckCircle2,
-  AlertCircle,
   Search,
 } from 'lucide-react';
 
 export default function ActivityAuditPage() {
   const { org } = useApp();
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
   const [filterAction, setFilterAction] = useState<string>('all');
   const [searchActor, setSearchActor] = useState<string>('');
 

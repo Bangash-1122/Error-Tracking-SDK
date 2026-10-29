@@ -6,8 +6,9 @@ import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { MetricsCard } from '@/components/dashboard/MetricsCard';
 import { EventsChart } from '@/components/dashboard/EventsChart';
-import { SeverityBadge, StatusBadge } from '@/components/common/Badges';
+import { SeverityBadge } from '@/components/common/Badges';
 import { api } from '@/lib/apiClient';
+import type { AnalyticsStats } from '@/types';
 import {
   Activity,
   AlertTriangle,
@@ -21,7 +22,7 @@ import {
 export default function OverviewPage() {
   const { org, activeProject, issues, activeTimeRange, activeEnvironment, releases } = useApp();
 
-  const [liveStats, setLiveStats] = useState<any>(null);
+  const [liveStats, setLiveStats] = useState<AnalyticsStats | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -41,7 +42,7 @@ export default function OverviewPage() {
   const totalUsers = liveStats?.affectedUsers ?? projectIssues.reduce((acc, curr) => acc + curr.userCount, 0);
   
   // Real regression check: An issue that was previously resolved and reappeared
-  const regressedCount = liveStats?.regressedIssues ?? projectIssues.filter((i) => (i as any).isRegressed === true).length;
+  const regressedCount = liveStats?.regressedIssues ?? projectIssues.filter((i) => i.isRegressed === true).length;
 
   // Most frequent 4 issues
   const topIssues = [...projectIssues]

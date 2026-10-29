@@ -36,7 +36,8 @@ export async function GET(req: NextRequest) {
     };
 
     return NextResponse.json(stats);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'SDK health query failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'SDK health query failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

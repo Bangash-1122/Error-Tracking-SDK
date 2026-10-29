@@ -21,8 +21,9 @@ export async function GET(req: NextRequest) {
     const rules = await db.listAlertRules(projectId);
     const deliveries = await db.listDeliveries(projectId);
     return NextResponse.json({ rules, deliveries });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching alerts' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching alerts';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -44,8 +45,9 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, rule });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error creating alert rule' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error creating alert rule';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -63,7 +65,8 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({ success: true, rule });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error toggling rule' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error toggling rule';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

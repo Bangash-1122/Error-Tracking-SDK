@@ -5,6 +5,7 @@ import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { MetricsCard } from '@/components/dashboard/MetricsCard';
 import { api } from '@/lib/apiClient';
+import type { PerformanceStats } from '@/types';
 import {
   Activity,
   Clock,
@@ -19,7 +20,7 @@ import {
 
 export default function PerformancePage() {
   const { org, activeProject } = useApp();
-  const [perfData, setPerfData] = useState<any>(null);
+  const [perfData, setPerfData] = useState<PerformanceStats | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -131,7 +132,7 @@ export default function PerformancePage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {slowEndpoints.length > 0 ? (
-                  slowEndpoints.map((ep: any, idx: number) => {
+                  slowEndpoints.map((ep: PerformanceStats['slowEndpoints'][number], idx: number) => {
                     const isSlow = ep.avgMs > 300;
                     return (
                       <tr key={idx} className="hover:bg-slate-50 transition-colors">

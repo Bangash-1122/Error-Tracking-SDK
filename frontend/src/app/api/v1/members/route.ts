@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerDb } from '@/lib/server/db';
+import { getServerCache } from '@/lib/server/cache';
 import { requireAuthUser } from '@/lib/server/auth';
 import { hashPassword } from '@/lib/server/auth';
 import { z } from 'zod';
@@ -8,7 +9,7 @@ const InviteMemberSchema = z.object({
   organizationId: z.string().default('org_acme_corp'),
   name: z.string().min(2, 'Name is required'),
   email: z.string().email('Valid email is required'),
-  role: z.enum(['admin', 'member']).default('member'),
+  role: z.enum(['admin', 'developer', 'viewer', 'member']).default('member'),
 });
 
 export async function GET(req: NextRequest) {
@@ -25,14 +26,15 @@ export async function GET(req: NextRequest) {
         joinedAt: m.createdAt,
       })),
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching members' }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Error fetching members';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body: unknown = await req.json();
     const parsed = InviteMemberSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
@@ -58,7 +60,8 @@ export async function POST(req: NextRequest) {
       user = await db.createUser(email, name, defaultHash);
     }
 
-    const membership = await db.addMembership(organizationId, user.id, role);
+    const membershipRole = role === 'developer' || role === 'viewer' ? 'member' : role;
+    const membership = await db.addMembership(organizationId, user.id, membershipRole);
 
     db.recordAuditLog({
       organizationId,
@@ -76,11 +79,40 @@ export async function POST(req: NextRequest) {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: membership.role,
+        role,
         joinedAt: membership.createdAt,
       },
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error inviting member' }, { status: 500 });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Error inviting member';
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const url = req.nextUrl;
+    const orgId = url.searchParams.get('orgId') || 'org_acme_corp';
+    const memberId = url.searchParams.get('memberId');
+
+    if (!memberId) {
+      return NextResponse.json({ error: 'memberId is required' }, { status: 400 });
+    }
+
+    let actor = { id: 'usr_admin_01', name: 'Admin User', email: 'admin@acme.com' };
+    try {
+      const auth = await requireAuthUser(req);
+      actor = { id: auth.user.id, name: auth.user.name, email: auth.user.email };
+    } catch {
+      // Demo fallback
+    }
+
+    const db = getServerDb();
+    const success = await db.removeMembership(orgId, memberId, actor);
+
+    return NextResponse.json({ success });
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : 'Error removing member';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

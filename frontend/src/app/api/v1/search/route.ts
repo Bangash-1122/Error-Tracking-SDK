@@ -10,7 +10,8 @@ export async function GET(req: NextRequest) {
     const results = await db.globalSearch(orgId, q);
 
     return NextResponse.json(results);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Search execution failed' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Search execution failed';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

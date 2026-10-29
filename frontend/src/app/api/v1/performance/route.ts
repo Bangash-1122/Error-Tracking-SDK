@@ -7,7 +7,8 @@ export async function GET(req: NextRequest) {
     const db = getServerDb();
     const stats = db.getPerformanceStats(projectId);
     return NextResponse.json(stats);
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error fetching performance telemetry' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error fetching performance telemetry';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

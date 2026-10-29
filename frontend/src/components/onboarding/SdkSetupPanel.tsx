@@ -111,8 +111,9 @@ error_tracker.init(
         'Verification event generated from SDK Integration Setup Panel'
       );
       setEventSent(true);
-    } catch (err: any) {
-      setIngestError(err.message || 'SDK test ingestion failed.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'SDK test ingestion failed.';
+      setIngestError(msg);
     } finally {
       setIsSending(false);
     }
@@ -142,7 +143,7 @@ error_tracker.init(
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => setActiveTab(tab.id as 'react' | 'js' | 'node' | 'python')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
                 activeTab === tab.id
                   ? 'bg-white text-[#2563EB] shadow-sm font-bold'

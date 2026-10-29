@@ -38,6 +38,9 @@ export interface SdkOptions {
   maxBreadcrumbs?: number;
   tags?: Record<string, string>;
   beforeSend?: (event: IngestPayload) => IngestPayload | null;
+  enabled?: boolean;
+  ignoredErrors?: string[];
+  scrubFields?: string[];
 }
 
 export interface IngestPayload {
@@ -74,6 +77,7 @@ export interface IngestResponse {
   eventId: string;
   requestId: string;
   receivedAt: string;
+  issueId?: string;
 }
 
 class ErrorTrackerSdk {
@@ -89,6 +93,7 @@ class ErrorTrackerSdk {
       release: 'v1.0.0',
       sampleRate: 1.0,
       maxBreadcrumbs: 50,
+      enabled: true,
       ...options,
     };
 
@@ -195,6 +200,30 @@ class ErrorTrackerSdk {
       throw new Error('SDK must be initialized with init() before capturing exceptions.');
     }
 
+    // Check if SDK is disabled
+    if (this.options.enabled === false) {
+      return {
+        status: 'accepted',
+        eventId: 'disabled_by_config',
+        requestId: 'dropped',
+        receivedAt: new Date().toISOString(),
+      };
+    }
+
+    const err = error instanceof Error ? error : new Error(String(error));
+    const errorType = err.name || 'Error';
+    const errorMessage = err.message || 'An unknown error occurred';
+
+    // Ignored errors filter
+    if (this.options.ignoredErrors?.some((ig) => errorType.includes(ig) || errorMessage.includes(ig))) {
+      return {
+        status: 'accepted',
+        eventId: 'dropped_ignored_error',
+        requestId: 'dropped',
+        receivedAt: new Date().toISOString(),
+      };
+    }
+
     // Sampling check
     if (this.options.sampleRate !== undefined && Math.random() > this.options.sampleRate) {
       return {
@@ -205,9 +234,6 @@ class ErrorTrackerSdk {
       };
     }
 
-    const err = error instanceof Error ? error : new Error(String(error));
-    const errorType = err.name || 'Error';
-    const errorMessage = err.message || 'An unknown error occurred';
     const frames = this.parseStackTrace(err.stack);
 
     // Browser / OS environment detection
@@ -288,7 +314,7 @@ class ErrorTrackerSdk {
     });
 
     if (!response.ok) {
-      const errBody = await response.json().catch(() => ({}));
+      const errBody = (await response.json().catch(() => ({}))) as { error?: string };
       throw new Error(errBody.error || `SDK Ingestion failed with status ${response.status}`);
     }
 
@@ -327,7 +353,7 @@ export function captureMessage(
   return sdk.captureMessage(message, level, context);
 }
 
-export function addBreadcrumb(breadcrumb: Omit<Breadcrumb, 'timestamp'>): void {
+export function addBreadcrumb(breadcrumb: Omit<Breadcrumb, 'timestamp'> & { timestamp?: string }): void {
   sdk.addBreadcrumb(breadcrumb);
 }
 

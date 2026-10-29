@@ -7,26 +7,19 @@ import { AppShell } from '@/components/layout/AppShell';
 import { MetricsCard } from '@/components/dashboard/MetricsCard';
 import { SeverityBadge } from '@/components/common/Badges';
 import { api } from '@/lib/apiClient';
+import type { AnalyticsStats } from '@/types';
 import {
   BarChart3,
   Activity,
   Users,
   Flame,
   Download,
-  Calendar,
-  Layers,
-  Globe,
-  GitBranch,
-  ShieldAlert,
-  ArrowUpRight,
-  TrendingDown,
-  TrendingUp,
 } from 'lucide-react';
 
 export default function AnalyticsPage() {
-  const { org, activeProject, issues, activeTimeRange, activeEnvironment, releases, showToast } = useApp();
+  const { org, activeProject, issues, activeTimeRange, showToast } = useApp();
 
-  const [liveStats, setLiveStats] = useState<any>(null);
+  const [liveStats, setLiveStats] = useState<AnalyticsStats | null>(null);
   const [selectedEnv, setSelectedEnv] = useState<string>('all');
   const [dateRange, setDateRange] = useState<string>(activeTimeRange);
 

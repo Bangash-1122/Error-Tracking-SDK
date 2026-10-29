@@ -5,6 +5,7 @@ import { useApp } from '@/lib/store';
 import { AppShell } from '@/components/layout/AppShell';
 import { MetricsCard } from '@/components/dashboard/MetricsCard';
 import { api } from '@/lib/apiClient';
+import type { SdkHealthMetrics } from '@/types';
 import {
   HeartPulse,
   CheckCircle2,
@@ -15,24 +16,22 @@ import {
   ShieldCheck,
   AlertTriangle,
   HelpCircle,
-  Clock,
-  Layers,
 } from 'lucide-react';
 
 export default function SdkHealthPage() {
-  const { org, activeProject, sendSimulatedEvent, showToast } = useApp();
-  const [health, setHealth] = useState<any>(null);
+  const { activeProject, sendSimulatedEvent, showToast } = useApp();
+  const [health, setHealth] = useState<SdkHealthMetrics | null>(null);
   const [testing, setTesting] = useState(false);
 
-  const fetchHealth = () => {
+  const fetchHealth = React.useCallback(() => {
     api.getSdkHealth(activeProject.id)
       .then((data) => setHealth(data))
       .catch(() => {});
-  };
+  }, [activeProject.id]);
 
   useEffect(() => {
     fetchHealth();
-  }, [activeProject.id]);
+  }, [fetchHealth]);
 
   const handleTestEvent = async () => {
     setTesting(true);
@@ -42,8 +41,9 @@ export default function SdkHealthPage() {
         'Diagnostic verification event triggered from SDK Health dashboard'
       );
       fetchHealth();
-    } catch (err: any) {
-      showToast(`Health probe failed: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      showToast(`Health probe failed: ${msg}`);
     } finally {
       setTesting(false);
     }
@@ -147,7 +147,7 @@ export default function SdkHealthPage() {
                 { name: 'Stack Trace Serialization', passed: true, detail: 'V8 / JSCore frame parser active' },
                 { name: 'CORS & Origin Security', passed: true, detail: 'Wildcard public ingress allowed' },
                 { name: 'Rate Limit Threshold', passed: true, detail: '600 events / minute allowed' },
-              ]).map((check: any, idx: number) => (
+              ]).map((check: { name: string; passed: boolean; detail: string }, idx: number) => (
                 <div
                   key={idx}
                   className="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between text-xs"
