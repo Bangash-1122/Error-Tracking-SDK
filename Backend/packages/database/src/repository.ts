@@ -72,7 +72,7 @@ export interface IRepository {
     type: string;
     release?: string;
     environment?: string;
-    payload: any;
+    payload: Record<string, unknown>;
     occurredAt: Date;
   }): Promise<IngestTransactionResult>;
 
@@ -82,13 +82,13 @@ export interface IRepository {
   patchIssue(id: string, patch: { status?: 'unresolved' | 'resolved' | 'ignored'; assignedTo?: string | null }): Promise<Issue | null>;
 
   // Releases
-  createRelease(projectId: string, version: string, metadata?: any): Promise<Release>;
+  createRelease(projectId: string, version: string, metadata?: Record<string, unknown>): Promise<Release>;
   getRelease(projectId: string, version: string): Promise<Release | null>;
   listReleases(projectId: string): Promise<Release[]>;
   getIssueReleases(issueId: string): Promise<IssueRelease[]>;
 
   // Alerts
-  createAlertRule(projectId: string, condition: any, destination: string, cooldownMinutes?: number): Promise<AlertRule>;
+  createAlertRule(projectId: string, condition: Record<string, unknown>, destination: string, cooldownMinutes?: number): Promise<AlertRule>;
   listAlertRules(projectId: string): Promise<AlertRule[]>;
   getAlertRuleById(id: string): Promise<AlertRule | null>;
   deleteAlertRule(id: string): Promise<boolean>;
@@ -363,7 +363,7 @@ export class MemoryRepository implements IRepository {
     type: string;
     release?: string;
     environment?: string;
-    payload: any;
+    payload: Record<string, unknown>;
     occurredAt: Date;
   }): Promise<IngestTransactionResult> {
     return this.withLock(async () => {
@@ -658,7 +658,7 @@ export class MemoryRepository implements IRepository {
     return issue;
   }
 
-  async createRelease(projectId: string, version: string, metadata?: any): Promise<Release> {
+  async createRelease(projectId: string, version: string, metadata?: Record<string, unknown>): Promise<Release> {
     const release: Release = {
       id: crypto.randomUUID(),
       projectId,
@@ -691,7 +691,7 @@ export class MemoryRepository implements IRepository {
     return list;
   }
 
-  async createAlertRule(projectId: string, condition: any, destination: string, cooldownMinutes = 15): Promise<AlertRule> {
+  async createAlertRule(projectId: string, condition: Record<string, unknown>, destination: string, cooldownMinutes = 15): Promise<AlertRule> {
     const rule: AlertRule = {
       id: crypto.randomUUID(),
       projectId,
