@@ -20,6 +20,7 @@ export function useAuthQuery() {
     queryKey: queryKeys.auth.me(),
     queryFn: () => api.getMe(),
     staleTime: 60 * 1000,
+    retry: false,
   });
 }
 

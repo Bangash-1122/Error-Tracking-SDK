@@ -5,13 +5,13 @@ import { getServerDb } from '@/lib/server/db';
 export async function GET(req: NextRequest) {
   const session = await getAuthSession(req);
   if (!session) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    return NextResponse.json({ authenticated: false, user: null, organizations: [] }, { status: 200 });
   }
 
   const db = getServerDb();
   const user = await db.getUserById(session.userId);
   if (!user) {
-    return NextResponse.json({ authenticated: false }, { status: 401 });
+    return NextResponse.json({ authenticated: false, user: null, organizations: [] }, { status: 200 });
   }
 
   const orgs = await db.listUserOrganizations(user.id);
