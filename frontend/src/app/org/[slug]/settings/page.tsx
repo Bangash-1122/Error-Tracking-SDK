@@ -227,7 +227,7 @@ export default function OrgSettingsPage() {
                 className="py-3.5 flex items-center justify-between gap-4 text-xs"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-[#2563EB] to-[#12A89D] flex items-center justify-center font-bold text-xs text-white">
+                  <div className="w-9 h-9 rounded-full bg-linear-to-tr from-[#2563EB] to-[#12A89D] flex items-center justify-center font-bold text-xs text-white">
                     {member.name.split(' ').map((n) => n[0]).join('')}
                   </div>
                   <div>

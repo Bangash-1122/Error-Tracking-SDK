@@ -133,7 +133,7 @@ export default function SystemStatusPage() {
 
         {error && (
           <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-sm flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 flex-shrink-0 text-rose-500" />
+            <ShieldAlert className="w-5 h-5 shrink-0 text-rose-500" />
             <span>{error}</span>
           </div>
         )}
@@ -142,7 +142,7 @@ export default function SystemStatusPage() {
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
                 <CheckCircle2 className="w-7 h-7 text-emerald-600" />
               </div>
               <div>
@@ -170,7 +170,7 @@ export default function SystemStatusPage() {
         {data?.diagnostics && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <Server className="w-5 h-5" />
               </div>
               <div>
@@ -181,7 +181,7 @@ export default function SystemStatusPage() {
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
                 <Cpu className="w-5 h-5" />
               </div>
               <div>
@@ -192,7 +192,7 @@ export default function SystemStatusPage() {
             </div>
 
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
@@ -224,7 +224,7 @@ export default function SystemStatusPage() {
               data?.services.map((svc, i) => (
                 <div key={i} className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
                       {svc.name.includes('Database') ? (
                         <Database className="w-4 h-4 text-slate-700" />
                       ) : (

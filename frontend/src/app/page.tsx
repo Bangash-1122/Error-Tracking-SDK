@@ -300,16 +300,16 @@ export default function HomePage() {
       ======================================================== */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Top Cyan/Blue Aurora */}
-        <div className="absolute -top-40 left-1/4 w-[750px] h-[500px] bg-gradient-to-br from-[#06B6D4]/25 via-[#2563EB]/20 to-transparent blur-[120px] rounded-full animate-aurora opacity-75" />
+        <div className="absolute -top-40 left-1/4 w-187.5 h-125 bg-linear-to-br from-[#06B6D4]/25 via-[#2563EB]/20 to-transparent blur-[120px] rounded-full animate-aurora opacity-75" />
         
         {/* Violet / Purple Luminous Core */}
-        <div className="absolute top-20 right-10 w-[650px] h-[550px] bg-gradient-to-bl from-[#8B5CF6]/30 via-[#A855F7]/15 to-transparent blur-[140px] rounded-full opacity-80" />
+        <div className="absolute top-20 right-10 w-162.5 h-137.5 bg-linear-to-bl from-[#8B5CF6]/30 via-[#A855F7]/15 to-transparent blur-[140px] rounded-full opacity-80" />
         
         {/* Mid-page Emerald Aurora */}
-        <div className="absolute top-[650px] -left-40 w-[600px] h-[600px] bg-gradient-to-tr from-[#10B981]/20 via-[#06B6D4]/15 to-transparent blur-[130px] rounded-full opacity-70" />
+        <div className="absolute top-162.5 -left-40 w-150 h-150 bg-linear-to-tr from-[#10B981]/20 via-[#06B6D4]/15 to-transparent blur-[130px] rounded-full opacity-70" />
         
         {/* Amber / Rose Sunset Core */}
-        <div className="absolute top-[1100px] right-0 w-[600px] h-[600px] bg-gradient-to-l from-[#F43F5E]/18 via-[#F59E0B]/15 to-transparent blur-[140px] rounded-full opacity-70" />
+        <div className="absolute top-275 right-0 w-150 h-150 bg-linear-to-l from-[#F43F5E]/18 via-[#F59E0B]/15 to-transparent blur-[140px] rounded-full opacity-70" />
       </div>
 
       {/* ========================================================
@@ -320,16 +320,16 @@ export default function HomePage() {
           {/* Logo & Brand */}
           <div className="flex items-center gap-8">
             <Link href="/" prefetch={true} className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#06B6D4] via-[#8B5CF6] to-[#F43F5E] p-[1.5px] shadow-lg shadow-[#8B5CF6]/30 group-hover:scale-105 transition-transform">
+              <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-[#06B6D4] via-[#8B5CF6] to-[#F43F5E] p-[1.5px] shadow-lg shadow-[#8B5CF6]/30 group-hover:scale-105 transition-transform">
                 <div className="w-full h-full bg-[#080D1D] rounded-[10px] flex items-center justify-center">
                   <ShieldAlert className="w-5 h-5 text-[#38BDF8] group-hover:rotate-12 transition-transform duration-300" />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xl tracking-tight bg-gradient-to-r from-white via-cyan-100 to-purple-200 bg-clip-text text-transparent">
+                <span className="font-extrabold text-xl tracking-tight bg-linear-to-r from-white via-cyan-100 to-purple-200 bg-clip-text text-transparent">
                   ErrorPulse
                 </span>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-[#8B5CF6]/20 to-[#06B6D4]/20 text-[#A78BFA] border border-[#8B5CF6]/40">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-linear-to-r from-[#8B5CF6]/20 to-[#06B6D4]/20 text-[#A78BFA] border border-[#8B5CF6]/40">
                   APM 2.0
                 </span>
               </div>
@@ -380,7 +380,7 @@ export default function HomePage() {
             <Link
               href="/org/acme-corp/overview"
               prefetch={true}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#2563EB] via-[#8B5CF6] to-[#06B6D4] hover:opacity-90 text-white shadow-lg shadow-[#8B5CF6]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-linear-to-r from-[#2563EB] via-[#8B5CF6] to-[#06B6D4] hover:opacity-90 text-white shadow-lg shadow-[#8B5CF6]/30 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <span>Launch Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -398,7 +398,7 @@ export default function HomePage() {
           {/* Top Pill Announcement */}
           <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#0D152C]/90 border border-[#8B5CF6]/40 text-[#C4B5FD] text-xs font-semibold mb-8 shadow-xl shadow-[#8B5CF6]/15 backdrop-blur-md animate-float-slow">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span className="bg-gradient-to-r from-cyan-400 via-purple-300 to-rose-400 bg-clip-text text-transparent font-bold">
+            <span className="bg-linear-to-r from-cyan-400 via-purple-300 to-rose-400 bg-clip-text text-transparent font-bold">
               ErrorPulse 2.0 Released
             </span>
             <span className="text-slate-600">•</span>
@@ -410,7 +410,7 @@ export default function HomePage() {
           <h1 className="gsap-hero-title text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight max-w-4xl leading-[1.08] mb-6">
             <span className="text-white">Commercial Error Monitoring & </span>
             <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-[#06B6D4] via-[#A855F7] to-[#F43F5E] bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-[#06B6D4] via-[#A855F7] to-[#F43F5E] bg-clip-text text-transparent">
               High-Velocity APM SaaS
             </span>
           </h1>
@@ -434,7 +434,7 @@ export default function HomePage() {
                     onClick={() => setSelectedPkg(pkg)}
                     className={`px-2.5 py-0.5 rounded text-[11px] font-mono font-bold transition-all cursor-pointer ${
                       selectedPkg === pkg
-                        ? 'bg-gradient-to-r from-[#06B6D4] to-[#8B5CF6] text-white shadow-md'
+                        ? 'bg-linear-to-r from-[#06B6D4] to-[#8B5CF6] text-white shadow-md'
                         : 'text-slate-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
@@ -463,7 +463,7 @@ export default function HomePage() {
             <Link
               href="/org/acme-corp/overview"
               prefetch={true}
-              className="flex items-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm bg-gradient-to-r from-[#2563EB] via-[#8B5CF6] to-[#06B6D4] text-white shadow-xl shadow-[#8B5CF6]/30 hover:opacity-95 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2.5 px-6 py-3.5 rounded-xl font-bold text-sm bg-linear-to-r from-[#2563EB] via-[#8B5CF6] to-[#06B6D4] text-white shadow-xl shadow-[#8B5CF6]/30 hover:opacity-95 transition-all hover:scale-105 active:scale-95 cursor-pointer"
             >
               <span>Explore Live Dashboard</span>
               <ArrowRight className="w-4 h-4" />
@@ -554,7 +554,7 @@ export default function HomePage() {
                 <button
                   onClick={handleSimulateInPage}
                   disabled={simulatedStatus === 'ingesting'}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-[#F43F5E] to-[#E11D48] text-white shadow-lg shadow-rose-500/25 hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-linear-to-r from-[#F43F5E] to-[#E11D48] text-white shadow-lg shadow-rose-500/25 hover:opacity-90 transition-all cursor-pointer disabled:opacity-50"
                 >
                   <Play className={`w-3.5 h-3.5 ${simulatedStatus === 'ingesting' ? 'animate-spin' : ''}`} />
                   <span>{simulatedStatus === 'ingesting' ? 'Ingesting...' : 'Trigger Exception'}</span>
@@ -678,7 +678,7 @@ try {
           {/* 3x3 Grid of Feature Cards with Distinctive Vibrant Color Themes */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Card 1: Cyan / Sky Blue */}
-            <div className="gsap-card bg-gradient-to-b from-[#0C152B]/90 to-[#070D1C]/90 border border-cyan-500/20 hover:border-cyan-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-cyan-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#0C152B]/90 to-[#070D1C]/90 border border-cyan-500/20 hover:border-cyan-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-cyan-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 group-hover:scale-110 transition-transform">
                 <Workflow className="w-5 h-5" />
               </div>
@@ -691,7 +691,7 @@ try {
             </div>
 
             {/* Card 2: Emerald / Mint */}
-            <div className="gsap-card bg-gradient-to-b from-[#0B1A24]/90 to-[#061118]/90 border border-emerald-500/20 hover:border-emerald-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#0B1A24]/90 to-[#061118]/90 border border-emerald-500/20 hover:border-emerald-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-emerald-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
                 <Layers className="w-5 h-5" />
               </div>
@@ -704,7 +704,7 @@ try {
             </div>
 
             {/* Card 3: Cyber Violet / Purple */}
-            <div className="gsap-card bg-gradient-to-b from-[#15102D]/90 to-[#0D091D]/90 border border-purple-500/20 hover:border-purple-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-purple-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#15102D]/90 to-[#0D091D]/90 border border-purple-500/20 hover:border-purple-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-purple-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-110 transition-transform">
                 <Clock className="w-5 h-5" />
               </div>
@@ -717,7 +717,7 @@ try {
             </div>
 
             {/* Card 4: Sunset Amber / Gold */}
-            <div className="gsap-card bg-gradient-to-b from-[#1C150A]/90 to-[#120D05]/90 border border-amber-500/20 hover:border-amber-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-amber-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#1C150A]/90 to-[#120D05]/90 border border-amber-500/20 hover:border-amber-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-amber-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-110 transition-transform">
                 <BellRing className="w-5 h-5" />
               </div>
@@ -730,7 +730,7 @@ try {
             </div>
 
             {/* Card 5: Hot Rose / Crimson */}
-            <div className="gsap-card bg-gradient-to-b from-[#1D0C15]/90 to-[#13070D]/90 border border-rose-500/20 hover:border-rose-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-rose-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#1D0C15]/90 to-[#13070D]/90 border border-rose-500/20 hover:border-rose-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-rose-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-4 group-hover:scale-110 transition-transform">
                 <ShieldCheck className="w-5 h-5" />
               </div>
@@ -743,7 +743,7 @@ try {
             </div>
 
             {/* Card 6: Cosmic Indigo */}
-            <div className="gsap-card bg-gradient-to-b from-[#10142C]/90 to-[#0A0D1D]/90 border border-indigo-500/20 hover:border-indigo-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-indigo-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#10142C]/90 to-[#0A0D1D]/90 border border-indigo-500/20 hover:border-indigo-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-indigo-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 mb-4 group-hover:scale-110 transition-transform">
                 <Server className="w-5 h-5" />
               </div>
@@ -756,7 +756,7 @@ try {
             </div>
 
             {/* Card 7: Neon Teal */}
-            <div className="gsap-card bg-gradient-to-b from-[#091A1E]/90 to-[#051114]/90 border border-teal-500/20 hover:border-teal-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-teal-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#091A1E]/90 to-[#051114]/90 border border-teal-500/20 hover:border-teal-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-teal-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 flex items-center justify-center text-teal-400 mb-4 group-hover:scale-110 transition-transform">
                 <Activity className="w-5 h-5" />
               </div>
@@ -769,7 +769,7 @@ try {
             </div>
 
             {/* Card 8: Fuchsia / Magenta */}
-            <div className="gsap-card bg-gradient-to-b from-[#1A0B22]/90 to-[#100615]/90 border border-fuchsia-500/20 hover:border-fuchsia-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-fuchsia-500/10 group backdrop-blur-md">
+            <div className="gsap-card bg-linear-to-b from-[#1A0B22]/90 to-[#100615]/90 border border-fuchsia-500/20 hover:border-fuchsia-400 p-6 rounded-2xl transition-all hover:shadow-2xl hover:shadow-fuchsia-500/10 group backdrop-blur-md">
               <div className="w-10 h-10 rounded-xl bg-fuchsia-500/15 border border-fuchsia-500/30 flex items-center justify-center text-fuchsia-400 mb-4 group-hover:scale-110 transition-transform">
                 <Lock className="w-5 h-5" />
               </div>
@@ -782,7 +782,7 @@ try {
             </div>
 
             {/* Card 9: Prismatic Gradient Highlight */}
-            <div className="gsap-card bg-gradient-to-tr from-[#8B5CF6] via-[#EC4899] to-[#F59E0B] p-6 rounded-2xl text-white shadow-2xl flex flex-col justify-between group hover:scale-[1.02] transition-all">
+            <div className="gsap-card bg-linear-to-tr from-[#8B5CF6] via-[#EC4899] to-[#F59E0B] p-6 rounded-2xl text-white shadow-2xl flex flex-col justify-between group hover:scale-[1.02] transition-all">
               <div>
                 <div className="inline-block px-2.5 py-1 rounded-md bg-white/20 text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-sm">
                   Full-Stack Architecture
@@ -929,8 +929,8 @@ try {
             CALL TO ACTION
         ======================================================== */}
         <section className="py-20 px-6 max-w-5xl mx-auto text-center border-t border-white/10">
-          <div className="bg-gradient-to-b from-[#0C1427] to-[#050814] border border-white/15 p-10 sm:p-14 rounded-3xl shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-[#06B6D4]/20 via-[#8B5CF6]/20 to-transparent blur-3xl rounded-full pointer-events-none" />
+          <div className="bg-linear-to-b from-[#0C1427] to-[#050814] border border-white/15 p-10 sm:p-14 rounded-3xl shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-linear-to-br from-[#06B6D4]/20 via-[#8B5CF6]/20 to-transparent blur-3xl rounded-full pointer-events-none" />
 
             <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
               Ready to eliminate silent crashes?
@@ -968,7 +968,7 @@ try {
           {/* Col 1 */}
           <div className="col-span-2 sm:col-span-1">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-tr from-[#06B6D4] via-[#8B5CF6] to-[#F43F5E] flex items-center justify-center">
+              <div className="w-6 h-6 rounded-lg bg-linear-to-tr from-[#06B6D4] via-[#8B5CF6] to-[#F43F5E] flex items-center justify-center">
                 <ShieldAlert className="w-3.5 h-3.5 text-white" />
               </div>
               <span className="font-bold text-white text-sm">ErrorPulse</span>

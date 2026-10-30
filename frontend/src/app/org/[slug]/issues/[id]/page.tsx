@@ -237,7 +237,7 @@ function IssueDetailContent() {
                       className="flex items-center justify-between p-2 rounded-lg bg-slate-50 border border-slate-200 font-mono"
                     >
                       <span className="text-slate-500 font-semibold">{key}</span>
-                      <span className="text-slate-800 truncate max-w-[160px]">{value}</span>
+                      <span className="text-slate-800 truncate max-w-40">{value}</span>
                     </div>
                   ))}
                 </div>

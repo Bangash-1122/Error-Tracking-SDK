@@ -118,8 +118,8 @@ export default function BillingPage() {
                 style={{ width: `${usagePercent}%` }}
                 className={`h-full rounded-full transition-all duration-500 ${
                   usagePercent > 80
-                    ? 'bg-gradient-to-r from-amber-500 to-rose-500'
-                    : 'bg-gradient-to-r from-[#2563EB] to-[#12A89D]'
+                    ? 'bg-linear-to-r from-amber-500 to-rose-500'
+                    : 'bg-linear-to-r from-[#2563EB] to-[#12A89D]'
                 }`}
               />
             </div>

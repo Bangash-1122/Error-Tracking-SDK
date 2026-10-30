@@ -438,7 +438,7 @@ export default function ProjectSettingsPage() {
                 <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
                   <div
                     style={{ width: `${usagePercent}%` }}
-                    className="bg-gradient-to-r from-[#2563EB] to-[#12A89D] h-full rounded-full transition-all duration-500"
+                    className="bg-linear-to-r from-[#2563EB] to-[#12A89D] h-full rounded-full transition-all duration-500"
                   />
                 </div>
               </div>

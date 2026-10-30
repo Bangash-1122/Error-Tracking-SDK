@@ -190,7 +190,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           className="flex items-center gap-3 overflow-hidden group"
           title="Return to Website Homepage"
         >
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#2563EB] to-[#12A89D] flex items-center justify-center shrink-0 shadow-lg shadow-[#2563EB]/30 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 rounded-xl bg-linear-to-tr from-[#2563EB] to-[#12A89D] flex items-center justify-center shrink-0 shadow-lg shadow-[#2563EB]/30 group-hover:scale-105 transition-transform">
             <ShieldAlert className="w-5 h-5 text-white" />
           </div>
           {(!collapsed || mobileDrawerOpen) && (
@@ -327,7 +327,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
         <Link
           href="/onboarding"
           onClick={() => setMobileDrawerOpen(false)}
-          className="flex items-center gap-3 px-3 py-2 rounded-xl bg-gradient-to-r from-[#2563EB]/20 to-[#12A89D]/20 hover:from-[#2563EB]/30 hover:to-[#12A89D]/30 border border-[#2563EB]/30 text-white text-xs font-semibold transition-all group"
+          className="flex items-center gap-3 px-3 py-2 rounded-xl bg-linear-to-r from-[#2563EB]/20 to-[#12A89D]/20 hover:from-[#2563EB]/30 hover:to-[#12A89D]/30 border border-[#2563EB]/30 text-white text-xs font-semibold transition-all group"
         >
           <Code2 className="w-4 h-4 text-[#93C5FD] shrink-0 group-hover:scale-110 transition-transform" />
           {(!collapsed || mobileDrawerOpen) && (
@@ -342,7 +342,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
       {/* User profile footer with Logout action */}
       <div className="p-3 border-t border-[#1E2E4A] flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
+          <div className="w-8 h-8 rounded-full bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-xs text-white shrink-0">
             {currentUser?.name?.slice(0, 2).toUpperCase() || 'AU'}
           </div>
           {(!collapsed || mobileDrawerOpen) && (
@@ -454,7 +454,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
                   'Maximum call stack size exceeded in recursive checkout calculateOrderTotal'
                 );
               }}
-              className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#2563EB] to-[#12A89D] text-white hover:opacity-95 shadow-md shadow-[#2563EB]/20 transition-all active:scale-95 cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 px-3 py-2 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-linear-to-r from-[#2563EB] to-[#12A89D] text-white hover:opacity-95 shadow-md shadow-[#2563EB]/20 transition-all active:scale-95 cursor-pointer shrink-0"
               title="Triggers a real test error event in the live pipeline"
             >
               <Zap className="w-3.5 h-3.5" />
